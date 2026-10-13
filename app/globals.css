@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  /* UBuild brand palette */
+  --color-navy: #062a59;
+  --color-navy-deep: #041c3e;
+  --color-primary: #0878d1;
+  --color-primary-dark: #0662ac;
+  --color-primary-light: #a9e6f5;
+  --color-accent: #ffd323;
+  --color-accent-dark: #eab308;
+  --color-pale: #edf6fa;
+  --color-ink: #09294f;
+
+  /* Typography */
+  --font-display: "Bebas Neue", "Oswald", "Arial Narrow", sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(9 41 79 / 0.06), 0 8px 24px -12px rgb(9 41 79 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(9 41 79 / 0.08), 0 16px 40px -16px rgb(9 41 79 / 0.28);
+
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white font-sans text-ink antialiased;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-ink);
+}
+
+/* Condensed display helper for tight uppercase headings */
+.heading-display {
+  @apply font-display uppercase leading-[0.95] tracking-wide;
+}
+
+/* Thin scrollbar for dashboard tables */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(9 41 79 / 0.35) transparent;
+}
