@@ -1,0 +1,3 @@
+# Local development data store.
+# Contact submissions, newsletter signups and registered users are stored here
+# when no external database is configured. Do not commit real user data.
