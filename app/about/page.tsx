@@ -44,7 +44,7 @@ export default function AboutPage() {
             aria-hidden="true"
           />
         </div>
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold tracking-[0.22em] text-accent uppercase">
             About UBuild
           </p>
@@ -61,7 +61,7 @@ export default function AboutPage() {
       </section>
 
       <section className="bg-white py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2">
             <div>
               <SectionHeading
@@ -97,7 +97,7 @@ export default function AboutPage() {
       </section>
 
       <section className="bg-pale py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Our approach"
             title="Practical, documented, accountable."
@@ -128,7 +128,7 @@ export default function AboutPage() {
       </section>
 
       <section className="bg-white py-16">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div className="mx-auto flex flex-col items-start gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <h2 className="heading-display text-3xl text-navy sm:text-4xl">
               Managing a build from abroad?

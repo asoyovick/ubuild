@@ -13,7 +13,7 @@ export default function ServicesPage() {
     <>
       {/* Page header */}
       <section className="bg-navy py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold tracking-[0.22em] text-accent uppercase">
             What we do
           </p>
@@ -29,7 +29,7 @@ export default function ServicesPage() {
 
       {/* Services list */}
       <section aria-labelledby="services-list" className="bg-white py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-10">
             {SERVICES.map((service, index) => {
               const Icon = service.icon;
@@ -82,7 +82,7 @@ export default function ServicesPage() {
 
       {/* CTA */}
       <section className="bg-pale py-16">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div className="mx-auto flex flex-col items-start gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <h2 className="heading-display text-3xl text-navy sm:text-4xl">
               Not sure where to start?

@@ -30,7 +30,7 @@ export function TechnologySection() {
       aria-labelledby="tech-heading"
       className="relative overflow-hidden bg-navy py-20 sm:py-28"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           {/* Large construction photograph */}
           <div className="relative order-2 lg:order-1">

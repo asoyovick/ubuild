@@ -18,7 +18,7 @@ export function TrustPanel() {
       aria-labelledby="trust-heading"
       className="border-y border-navy/10 bg-pale py-20 sm:py-24"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.2fr]">
           {/* Coordinator profile panel */}
           <div className="relative">

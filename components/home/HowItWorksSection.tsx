@@ -8,7 +8,7 @@ export function HowItWorks() {
       aria-labelledby="how-heading"
       className="border-y border-navy/10 bg-pale py-20 sm:py-28"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             eyebrow="The process"

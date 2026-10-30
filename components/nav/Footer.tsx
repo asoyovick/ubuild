@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="bg-navy text-white">
       {/* CTA band */}
       <div className="border-b border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div className="mx-auto flex flex-col items-start gap-6 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <h2 className="heading-display text-4xl text-white sm:text-5xl">
               Your next build starts here.
@@ -28,7 +28,7 @@ export function Footer() {
       </div>
 
       {/* Main footer */}
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.2fr]">
           <div>
             <span className="heading-display text-3xl tracking-wider text-white">

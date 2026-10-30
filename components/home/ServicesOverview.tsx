@@ -9,7 +9,7 @@ export function ServicesOverview() {
       aria-labelledby="services-heading"
       className="bg-white py-20 sm:py-28"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div id="services-heading">
             <SectionHeading
