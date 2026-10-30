@@ -23,7 +23,7 @@ export function Hero() {
         <div className="absolute inset-0 bg-navy/20" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-40 sm:px-6 lg:px-8 lg:pb-28">
+      <div className="relative mx-auto w-full px-4 pb-20 pt-40 sm:px-6 lg:px-8 lg:pb-28">
         <div className="max-w-3xl">
           <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-navy/60 px-4 py-1.5 text-xs font-semibold tracking-[0.18em] text-primary-light uppercase backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />

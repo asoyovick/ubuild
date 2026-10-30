@@ -10,7 +10,7 @@ export function TrustSection() {
       aria-labelledby="trust-principles-heading"
       className="bg-white py-20 sm:py-28"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading
           align="center"
           eyebrow="Our promise"

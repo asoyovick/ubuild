@@ -81,7 +81,7 @@ export default function ContactPage() {
   return (
     <>
       <section className="bg-navy py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold tracking-[0.22em] text-accent uppercase">
             Contact
           </p>
@@ -96,7 +96,7 @@ export default function ContactPage() {
       </section>
 
       <section className="bg-white py-20 sm:py-24">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1fr_1.4fr]">
+        <div className="mx-auto grid gap-12 lg:grid-cols-[1fr_1.4fr]">
           {/* Side panel */}
           <div>
             <SectionHeading

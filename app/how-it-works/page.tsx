@@ -53,7 +53,7 @@ export default function HowItWorksPage() {
   return (
     <>
       <section className="bg-navy py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold tracking-[0.22em] text-accent uppercase">
             The process
           </p>
@@ -69,7 +69,7 @@ export default function HowItWorksPage() {
       </section>
 
       <section className="bg-white py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <ol className="space-y-16">
             {HOW_IT_WORKS.map((step, index) => {
               const detail = STEP_DETAILS[index];

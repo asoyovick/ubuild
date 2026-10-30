@@ -82,7 +82,7 @@ export default function ProjectsPage() {
   return (
     <>
       <section className="bg-navy py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-bold tracking-[0.22em] text-accent uppercase">
             Projects
           </p>
@@ -98,7 +98,7 @@ export default function ProjectsPage() {
       </section>
 
       <section aria-labelledby="showcase-heading" className="bg-white py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div id="showcase-heading" className="sr-only">
             <SectionHeading
               eyebrow="Showcase"
