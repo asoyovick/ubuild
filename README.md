@@ -1,8 +1,8 @@
 # UBuild
 
-**Build from anywhere in the world.**
+**Construction project coordination.**
 
-UBuild is a construction technology platform that helps property owners and investors plan, coordinate, and monitor construction projects remotely — with an initial focus on Kenya and diaspora customers managing builds while abroad.
+UBuild helps property owners and project teams coordinate construction work, with an initial focus on projects in Kenya.
 
 This repository is the UBuild frontend: a Next.js (App Router) application with TypeScript, Tailwind CSS, and Lucide icons.
 
@@ -33,21 +33,21 @@ npm run lint       # ESLint
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Homepage (hero, services, project overview, technology, precision, process, trust) |
+| `/` | Homepage (services and project process) |
 | `/services` | Service detail pages |
 | `/how-it-works` | Project lifecycle |
-| `/projects` | Public project showcase |
+| `/projects` | Construction project types supported |
 | `/about` | Company mission and approach |
 | `/contact` | Project inquiry form (validated, server-side stored) |
 | `/pricing` | Service packages and quote requests |
 | `/login` / `/register` | Authentication |
-| `/dashboard` | Authenticated workspace (overview, projects, milestones, reports, approvals, settings) |
+| `/dashboard` | Authenticated workspace and project list |
 
 ## How it works (data & integrations)
 
 ### Local data store
 
-For development, the app stores users, sessions, contact submissions, and newsletter signups in `data/*.json` (git-ignored). This makes forms, login, registration, and the dashboard fully functional without external services.
+The current data adapter stores users, sessions, project inquiries, newsletter signups, projects, memberships, invitations, and audit entries in `data/*.json` (git-ignored). This is suitable for local development only; it is not a production database.
 
 - Passwords are hashed with scrypt; sessions use httpOnly cookies.
 - **Do not commit `data/`** — it is excluded by `.gitignore`.
@@ -56,8 +56,8 @@ For development, the app stores users, sessions, contact submissions, and newsle
 
 1. **Email delivery** — contact-form submissions are stored locally but not emailed. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `EMAIL_TO` in `.env.local` (see `.env.example`) and wire them into `app/api/contact/route.ts`.
 2. **Production database** — replace `lib/store.ts` (the JSON layer) with your database client. All API routes read through this module.
-3. **Dashboard data** — the dashboard currently renders clearly-labelled **sample data** from `lib/dashboard-data.ts`. Replace with real API calls per user session.
-4. **Newsletter** — signups are stored locally; connect an email service to send campaigns.
+3. **Project workflows** — project creation, membership, invitations, and activity are stored. Budget, milestone, report, approval, and document records are not implemented yet and are not shown as populated data.
+4. **Newsletter and password recovery email** — signups are stored locally; connect an email service before sending campaigns or password-reset links. Password reset requests currently report that email recovery is unavailable.
 
 ### API routes
 
@@ -67,6 +67,7 @@ For development, the app stores users, sessions, contact submissions, and newsle
 - `POST /api/auth/login` — verify credentials, sets session cookie
 - `POST /api/auth/logout` — clear session
 - `GET /api/auth/me` — current session user
+- `POST /api/projects` — create a project and assign its creator as owner
 
 ## Accessibility & quality
 
@@ -77,4 +78,4 @@ For development, the app stores users, sessions, contact submissions, and newsle
 ## Deployment notes
 
 - Set `NEXT_PUBLIC_SITE_URL` to your production domain.
-- The local JSON store is for development/demo only — swap in a real database before public launch.
+- The local JSON store is for development only — replace it with a real database before public launch.

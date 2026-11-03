@@ -29,7 +29,7 @@ export interface Service {
 
 export const SERVICES: Service[] = [
   {
-    title: "AI-Assisted Planning",
+    title: "Project Planning",
     description:
       "Organize project requirements, preliminary budgets, and construction milestones.",
     icon: ClipboardCheck,
@@ -92,45 +92,36 @@ export const SERVICES: Service[] = [
 export const HOW_IT_WORKS = [
   {
     step: "01",
-    title: "Create Your Project",
-    description:
-      "Define your vision, project location, budget, and goals.",
+    title: "Create a project",
+    description: "Add the project name, location, and type to your workspace.",
   },
   {
     step: "02",
-    title: "Build Your Plan",
-    description:
-      "Organize requirements, milestones, and professional support.",
+    title: "Set project access",
+    description: "Project members are assigned roles that control what they can access.",
   },
   {
     step: "03",
-    title: "Monitor Progress",
-    description:
-      "Review reports, photographs, tasks, and project updates.",
-  },
-  {
-    step: "04",
-    title: "Manage Decisions",
-    description:
-      "Review expenses, approve changes, and coordinate the team.",
+    title: "Review project activity",
+    description: "See recorded changes to the project, its membership, and invitations.",
   },
 ] as const;
 
 export const TRUST_PRINCIPLES = [
   {
-    title: "Documented Project Decisions",
+    title: "A workspace for each project",
     description:
-      "Every instruction, approval, and instruction change is recorded with a date and an owner, so nothing important lives in a WhatsApp thread.",
+      "Project details and team membership stay attached to the relevant build.",
   },
   {
-    title: "Evidence-Backed Progress Reports",
+    title: "Project-specific access",
     description:
-      "Site updates come with photographs and notes from the people doing the work, not summaries written days later.",
+      "Role permissions determine what each member can see and manage.",
   },
   {
-    title: "Clear Budget and Approval Records",
+    title: "Invitations with defined roles",
     description:
-      "See what was quoted, what was approved, and what was paid — and keep the records after the project closes.",
+      "Invite a project team member with the access they need for their work.",
   },
 ] as const;
 
@@ -166,4 +157,4 @@ export const FOOTER_COLUMNS = [
 ] as const;
 
 export const SITE_NAME = "UBuild";
-export const TAGLINE = "Build from anywhere in the world.";
+export const TAGLINE = "Construction project coordination.";

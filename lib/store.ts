@@ -8,9 +8,8 @@ import path from "node:path";
  * contact submissions, and newsletter signups in /data so forms and
  * authentication genuinely work without an external database.
  *
- * For production, set DATABASE_URL and connect a real database —
- * the API routes read through this module, so only this file needs
- * to change.
+ * For production, replace this adapter and the project store with
+ * database-backed repositories.
  */
 
 const DATA_DIR = path.join(process.cwd(), "data");

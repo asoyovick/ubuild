@@ -6,31 +6,23 @@ export function HowItWorks() {
   return (
     <section
       aria-labelledby="how-heading"
-      className="border-y border-navy/10 bg-pale py-20 sm:py-28"
+      className="border-y border-navy/10 bg-pale py-16 sm:py-20"
     >
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-start gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading
             eyebrow="The process"
             title="How it works"
-            description="Four steps from first idea to finished build — each one documented as you go."
+            description="Set up a project workspace, manage team roles, and review recorded changes."
           />
           <ArrowLink href="/how-it-works">Full lifecycle details</ArrowLink>
         </div>
 
-        {/* Connected timeline */}
-        <ol className="relative mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-          {/* Connector line (desktop) */}
-          <div
-            aria-hidden="true"
-            className="absolute top-7 right-[12%] left-[12%] hidden h-px bg-primary/25 lg:block"
-          />
+        <ol className="mt-10 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
           {HOW_IT_WORKS.map((step) => (
-            <li key={step.step} className="relative">
-              <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-xl bg-navy text-lg font-bold text-accent shadow-lift">
-                {step.step}
-              </div>
-              <h3 className="mt-5 text-xl font-bold text-navy">
+            <li key={step.step} className="border-t border-navy/15 py-5">
+              <p className="text-sm font-semibold text-primary">{step.step}</p>
+              <h3 className="mt-3 text-lg font-semibold text-navy">
                 {step.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-ink/70">

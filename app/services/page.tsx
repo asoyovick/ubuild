@@ -60,11 +60,6 @@ export default function ServicesPage() {
                     <p className="mt-3 max-w-lg text-base leading-relaxed text-ink/70">
                       {service.description}
                     </p>
-                    <p className="mt-3 max-w-lg text-sm text-ink/55">
-                      Included in every UBuild project workspace, with
-                      your coordinator keeping each part current as the
-                      build moves forward.
-                    </p>
                     {service.cta && service.ctaHref && (
                       <div className="mt-5">
                         <ArrowLink href={service.ctaHref}>

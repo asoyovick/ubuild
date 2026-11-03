@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { listUsers, findUserByEmail, createUser } from "@/lib/store";
+import { findUserByEmail, createUser } from "@/lib/store";
 import {
   createProject,
   createMembership,

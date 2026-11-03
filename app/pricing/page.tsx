@@ -15,7 +15,6 @@ const PACKAGES = [
       "Recommended next steps",
       "One coordinator call",
     ],
-    featured: false,
   },
   {
     name: "Project Coordination",
@@ -30,7 +29,6 @@ const PACKAGES = [
       "Professional coordination",
       "Approval management",
     ],
-    featured: true,
   },
   {
     name: "Full Project Management",
@@ -45,7 +43,6 @@ const PACKAGES = [
       "Contractor and supplier liaison",
       "Close-out documentation",
     ],
-    featured: false,
   },
 ] as const;
 
@@ -86,34 +83,17 @@ export default function PricingPage() {
             {PACKAGES.map((pkg) => (
               <article
                 key={pkg.name}
-                className={`relative flex flex-col rounded-2xl p-8 ${
-                  pkg.featured
-                    ? "bg-navy text-white shadow-lift lg:-translate-y-3"
-                    : "bg-pale shadow-card"
-                }`}
+                className="flex flex-col border-t border-navy/15 py-6"
               >
-                {pkg.featured && (
-                  <span className="absolute -top-3 left-8 rounded-full bg-accent px-3 py-1 text-xs font-bold text-ink">
-                    Most popular
-                  </span>
-                )}
-                <h2 className="text-xl font-bold">{pkg.name}</h2>
-                <p
-                  className={`mt-1.5 text-sm ${
-                    pkg.featured ? "text-white/70" : "text-ink/60"
-                  }`}
-                >
+                <h2 className="text-xl font-semibold text-navy">{pkg.name}</h2>
+                <p className="mt-1.5 text-sm text-ink/65">
                   {pkg.description}
                 </p>
                 <p className="mt-6">
-                  <span className="text-3xl font-bold">
+                  <span className="text-2xl font-semibold text-navy">
                     {pkg.price}
                   </span>
-                  <span
-                    className={`ml-2 text-sm ${
-                      pkg.featured ? "text-white/60" : "text-ink/50"
-                    }`}
-                  >
+                  <span className="ml-2 text-sm text-ink/55">
                     {pkg.period}
                   </span>
                 </p>
@@ -123,17 +103,8 @@ export default function PricingPage() {
                       key={feature}
                       className="flex items-start gap-3 text-sm"
                     >
-                      <Check
-                        className={`mt-0.5 h-4 w-4 shrink-0 ${
-                          pkg.featured ? "text-accent" : "text-primary"
-                        }`}
-                        aria-hidden="true"
-                      />
-                      <span
-                        className={
-                          pkg.featured ? "text-white/85" : "text-ink/75"
-                        }
-                      >
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      <span className="text-ink/75">
                         {feature}
                       </span>
                     </li>
@@ -142,7 +113,7 @@ export default function PricingPage() {
                 <div className="mt-8">
                   <Button
                     href="/contact"
-                    variant={pkg.featured ? "primary" : "secondary"}
+                    variant="secondary"
                     className="w-full"
                   >
                     Request a quote

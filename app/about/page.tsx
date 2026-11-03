@@ -6,28 +6,28 @@ import { MapPin, Users, ClipboardList } from "lucide-react";
 const APPROACH = [
   {
     icon: MapPin,
-    title: "On the ground, where your project is",
+    title: "Built for projects in Kenya",
     description:
-      "Our coordinators work in the market where your build happens. They know the local professionals, materials pricing, and approval realities.",
+      "UBuild focuses on property owners and teams coordinating construction work in Kenya.",
   },
   {
     icon: ClipboardList,
-    title: "Written down, every time",
+    title: "Project access by role",
     description:
-      "Decisions, quantities, and approvals are recorded in plain language. If it isn't documented, it didn't happen.",
+      "Project memberships use defined roles to control access to project information.",
   },
   {
     icon: Users,
-    title: "Built around the owner",
+    title: "A record of project changes",
     description:
-      "The workspace is written for property owners, not only for engineers. Ask anything, any time — your coordinator answers.",
+      "Key changes to a project, its team, and invitations are recorded in its activity history.",
   },
 ] as const;
 
 export const metadata = {
   title: "About Us",
   description:
-    "UBuild connects property owners and investors with construction professionals and digital tools for remote project management.",
+    "UBuild provides project workspaces for property owners and construction teams in Kenya.",
 };
 
 export default function AboutPage() {
@@ -49,13 +49,10 @@ export default function AboutPage() {
             About UBuild
           </p>
           <h1 className="heading-display mt-3 max-w-3xl text-5xl text-white sm:text-6xl">
-            Construction expertise, managed with technology
+            Construction projects, organized in one workspace
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/80">
-            UBuild connects property owners and investors with
-            construction professionals and digital tools for
-            planning, budgets, milestones, progress reports,
-            documentation, and approvals.
+            UBuild gives property owners and project teams a shared place for project details, membership, and recorded activity.
           </p>
         </div>
       </section>
@@ -66,16 +63,11 @@ export default function AboutPage() {
             <div>
               <SectionHeading
                 eyebrow="Our mission"
-                title="Distance should not decide build quality."
-                description="Many property owners manage construction from another city or country. That makes information the most valuable material on any site. We make sure owners always know what is happening, what it costs, and what happens next."
+                title="Keep project details and access together."
+                description="Construction work involves owners and teams making decisions across different locations. A shared project record helps keep the people and project information connected."
               />
               <p className="mt-6 max-w-lg text-base leading-relaxed text-ink/70">
-                We began in Kenya, working with property owners in
-                Nairobi and with diaspora customers managing
-                family homes from abroad. The same problems
-                appear everywhere: budgets that drift, milestones
-                that slip, and decisions lost in message threads.
-                UBuild exists to close that gap.
+                The current workspace supports project setup, role-based access, invitations, and activity records. Budgeting, milestones, reports, and document storage are still in development.
               </p>
               <div className="mt-8">
                 <ArrowLink href="/contact">
@@ -86,7 +78,7 @@ export default function AboutPage() {
             <div className="relative overflow-hidden rounded-2xl shadow-lift">
               <Image
                 src="/images/completed-house.jpg"
-                alt="Completed contemporary home delivered through careful coordination"
+                alt="Contemporary residential home"
                 width={820}
                 height={620}
                 className="aspect-[5/4] w-full object-cover"
@@ -100,7 +92,7 @@ export default function AboutPage() {
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Our approach"
-            title="Practical, documented, accountable."
+            title="A practical project workspace."
             align="center"
           />
           <div className="mt-14 grid gap-6 md:grid-cols-3">
@@ -134,8 +126,7 @@ export default function AboutPage() {
               Managing a build from abroad?
             </h2>
             <p className="mt-2 max-w-xl text-ink/70">
-              We work with owners in different time zones every
-              day. Your coordinator is your local presence.
+              Keep team access and recorded changes tied to the project.
             </p>
           </div>
           <ArrowLink href="/contact" className="shrink-0 text-base">
