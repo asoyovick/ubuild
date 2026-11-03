@@ -182,7 +182,7 @@ export default function RegisterPage() {
         </Button>
 
         <p className="mt-4 text-center text-xs text-ink/50">
-          By creating an account you can track projects, budgets, and approvals.
+          Create an account to manage your project workspace and team access.
         </p>
       </form>
     </AuthLayout>

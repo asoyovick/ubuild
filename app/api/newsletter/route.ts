@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import {
   addNewsletterSignup,
   listNewsletter,
-  newId,
 } from "@/lib/store";
 
 export async function POST(request: Request) {
@@ -42,10 +41,8 @@ export async function POST(request: Request) {
     signedUpAt: new Date().toISOString(),
   });
 
-  void newId;
-
   return NextResponse.json(
-    { message: "You're subscribed. We'll send occasional project insights." },
+    { message: "Your email has been added to the project insights list." },
     { status: 201 },
   );
 }

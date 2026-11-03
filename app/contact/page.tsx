@@ -89,8 +89,7 @@ export default function ContactPage() {
             Tell us about your project
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/75">
-            Share a few details and a project coordinator
-            will respond within one working day.
+            Share a few details about the work and how to reach you.
           </p>
         </div>
       </section>
@@ -166,10 +165,8 @@ export default function ContactPage() {
                   Your inquiry has been received
                 </h2>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-ink/70">
-                  Thank you, {form.name || "friend"}. A project
-                  coordinator will reach out to{" "}
-                  {form.email || "your email"} within one
-                  working day.
+                  We’ve recorded the project details you sent. The contact address provided was{" "}
+                  {form.email || "not provided"}.
                 </p>
                 <Button
                   href="/contact"
@@ -358,8 +355,7 @@ export default function ContactPage() {
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-ink/55">
-                    We respond within one working day. Your
-                    details are only used for your inquiry.
+                    The information is stored so the UBuild team can review your inquiry.
                   </p>
                   <Button
                     type="submit"

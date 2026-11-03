@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, MapPin, Mail } from "lucide-react";
 import { FOOTER_COLUMNS, TAGLINE } from "@/lib/data";
+import { NewsletterForm } from "@/components/nav/NewsletterForm";
 
 export function Footer() {
   return (
@@ -10,18 +11,17 @@ export function Footer() {
         <div className="mx-auto flex flex-col items-start gap-6 px-4 py-16 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div>
             <h2 className="heading-display text-4xl text-white sm:text-5xl">
-              Your next build starts here.
+              Planning a construction project?
             </h2>
             <p className="mt-3 max-w-xl text-base text-white/70">
-              Take the first step toward managing your construction project with
-              greater visibility and control.
+              Tell us where you are in the process and what support you need.
             </p>
           </div>
           <Link
             href="/contact"
             className="inline-flex shrink-0 items-center gap-2 rounded-md bg-accent px-7 py-3.5 text-sm font-bold tracking-wide text-ink transition-all hover:bg-accent-dark hover:shadow-[0_12px_28px_-10px_rgb(255_211_35/0.6)]"
           >
-            Start Your Project
+            Talk to UBuild
             <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
@@ -88,42 +88,7 @@ export function Footer() {
               </li>
             </ul>
 
-            <form
-              className="newsletter-form mt-6"
-              data-newsletter
-              aria-label="Newsletter subscription"
-            >
-              <h3 className="text-sm font-bold tracking-widest text-white uppercase">
-                Project insights
-              </h3>
-              <p className="mt-3 text-xs leading-relaxed text-white/55">
-                Occasional notes on planning and managing builds remotely.
-              </p>
-              <div className="mt-3 flex overflow-hidden rounded-md bg-white/10 focus-within:ring-2 focus-within:ring-accent">
-                <label htmlFor="footer-email" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="footer-email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="Your email"
-                  className="w-full bg-transparent px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 bg-accent px-4 text-sm font-bold text-ink transition-colors hover:bg-accent-dark"
-                >
-                  Join
-                </button>
-              </div>
-              <p
-                className="newsletter-message mt-2 hidden text-xs"
-                role="status"
-                aria-live="polite"
-              />
-            </form>
+            <NewsletterForm />
           </div>
         </div>
 

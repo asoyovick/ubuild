@@ -82,7 +82,7 @@ export function Navbar() {
             href="/contact"
             className="inline-flex items-center gap-1.5 rounded-md bg-accent px-5 py-2.5 text-sm font-bold tracking-wide text-ink transition-all hover:bg-accent-dark hover:shadow-[0_8px_20px_-8px_rgb(255_211_35/0.7)]"
           >
-            Start Your Project
+            Talk to UBuild
             <ArrowUpRight className="h-4 w-4" />
           </Link>
         </div>
@@ -136,7 +136,7 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className="block rounded-md bg-accent px-3 py-3 text-center text-sm font-bold text-ink hover:bg-accent-dark"
               >
-                Start Your Project
+                Talk to UBuild
               </Link>
             </li>
           </ul>

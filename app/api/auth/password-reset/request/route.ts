@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { requestPasswordReset, membershipHasPermission } from "@/lib/authorization";
-
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -23,23 +21,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ errors }, { status: 422 });
   }
 
-  const token = await requestPasswordReset((email as string).trim().toLowerCase());
-  if (!token) {
-    // Return the same success shape to avoid account enumeration.
-    return NextResponse.json(
-      {
-        message:
-          "If that email belongs to an account, we have sent password reset instructions.",
-      },
-      { status: 200 },
-    );
-  }
-
   return NextResponse.json(
     {
-      message:
-        "If that email belongs to an account, we have sent password reset instructions.",
+      error: "Password reset by email is not available yet. Contact UBuild for help regaining access.",
     },
-    { status: 200 },
+    { status: 503 },
   );
 }
