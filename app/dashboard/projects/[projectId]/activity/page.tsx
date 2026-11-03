@@ -1,0 +1,132 @@
+import { redirect } from "next/navigation";
+import { requireProjectMembership } from "@/lib/authorization";
+import { getProject } from "@/lib/projects/store";
+import { getSessionUser } from "@/lib/auth";
+import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { RoleNav } from "@/components/dashboard/RoleNav";
+import { Activity, Users, FileText, CheckCircle, XCircle } from "lucide-react";
+import type { Metadata } from "next";
+
+const AUDIT_FILE = "data/audit.json";
+
+export const metadata: Metadata = {
+  title: "Activity",
+};
+
+export default async function ProjectActivityPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  const user = await getSessionUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  let membership;
+  try {
+    membership = await requireProjectMembership(projectId);
+  } catch {
+    redirect("/dashboard");
+  }
+
+  const project = await getProject(projectId);
+  if (!project) {
+    redirect("/dashboard");
+  }
+
+  let entries: Array<{
+    id: string;
+    projectId: string;
+    userId: string;
+    action: string;
+    details: string;
+    createdAt: string;
+  }> = [];
+
+  try {
+    const fs = await import("node:fs/promises");
+    const raw = await fs.readFile(AUDIT_FILE, "utf-8");
+    const all = JSON.parse(raw) as Array<{
+      id: string;
+      projectId: string;
+      userId: string;
+      action: string;
+      details: string;
+      createdAt: string;
+    }>;
+    entries = all.filter((e) => e.projectId === projectId);
+  } catch {
+    entries = [];
+  }
+
+  const actionIcons: Record<string, typeof Activity> = {
+    project_created: Activity,
+    membership_created: Users,
+    membership_restored: Users,
+    member_removed: Users,
+    role_changed: Users,
+    invitation_created: FileText,
+    invitation_revoked: FileText,
+    approval_approved: CheckCircle,
+    approval_declined: XCircle,
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-navy sm:text-3xl">Activity</h1>
+          <p className="mt-1 text-sm text-ink/60">
+            Recent changes in {project.name}.
+          </p>
+        </div>
+        <RoleNav role={membership.role} projectId={projectId} />
+      </div>
+
+      <Card>
+        <CardHeader title="Recent activity" subtitle="Recorded project changes." />
+        <CardBody>
+          {entries.length === 0 ? (
+            <p className="text-sm text-ink/70">
+              No activity has been recorded yet.
+            </p>
+          ) : (
+            <ul className="divide-y divide-navy/10">
+              {entries.map((entry) => {
+                const Icon = actionIcons[entry.action] ?? Activity;
+                return (
+                  <li key={entry.id} className="flex items-start gap-3 py-4 first:pt-0 last:pb-0">
+                    <Icon className="mt-0.5 h-4.5 w-4.5 shrink-0 text-navy/60" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-ink">
+                        {entry.action.replace(/_/g, " ")}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink/55">
+                        {entry.details}
+                      </p>
+                      <p className="mt-1 text-xs text-ink/45">
+                        {new Date(entry.createdAt).toLocaleString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      <p className="rounded-md bg-pale px-4 py-2.5 text-xs text-ink/60">
+        Activity records appear as project changes are made.
+      </p>
+    </div>
+  );
+}
