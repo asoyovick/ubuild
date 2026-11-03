@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { acceptInvitation } from "@/lib/authorization";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { Card, CardBody } from "@/components/ui/Card";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 
@@ -37,10 +36,7 @@ export default async function AcceptInvitationPage({
   }
 
   return (
-    <div className="min-h-screen bg-pale">
-      <DashboardSidebar userName={user.name} userEmail={user.email} />
-      <div className="lg:pl-64">
-        <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-10">
+    <div className="mx-auto max-w-2xl py-6">
           <h1 className="text-2xl font-bold text-navy sm:text-3xl">
             Accept invitation
           </h1>
@@ -92,7 +88,7 @@ export default async function AcceptInvitationPage({
                     No invitation to accept
                   </h2>
                   <p className="mt-2 max-w-md text-sm text-ink/60">
-                    Use the link sent to your email to accept an invitation.
+                    Open the invitation link shared with you to join a project.
                   </p>
                 </div>
               </CardBody>
@@ -107,8 +103,6 @@ export default async function AcceptInvitationPage({
               Back to dashboard
             </a>
           </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { getProject } from "@/lib/projects/store";
 import { getSessionUser } from "@/lib/auth";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { RoleNav } from "@/components/dashboard/RoleNav";
-import { formatKES } from "@/lib/dashboard-data";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -50,19 +49,11 @@ export default async function ProjectBudgetPage({
         <CardHeader title="Budget summary" subtitle="Calculated from actual budget and expense records." />
         <CardBody>
           <p className="text-sm text-ink/70">
-            No budget or expense records have been added yet.
+            Budget and expense records cannot be managed in this workspace yet.
           </p>
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader title="Budget breakdown" />
-        <CardBody>
-          <p className="text-sm text-ink/70">
-            Budget breakdowns are not available until line items are entered.
-          </p>
-        </CardBody>
-      </Card>
     </div>
   );
 }

@@ -4,13 +4,11 @@ import {
   findInvitationByToken,
   getProject,
   listMembershipsForProject,
-  listPasswordResets,
   appendAuditEntry,
   newId,
   createMembership,
   updateInvitation,
   listInvitations,
-  listMemberships,
   createInvitation as createInvitationRecord,
   createPasswordReset as createPasswordResetRecord,
   consumePasswordReset as consumePasswordResetRecord,
@@ -123,7 +121,7 @@ const ROLE_PERMISSIONS_MAP: RolePermissionsMap = {
   ],
 };
 import { getSessionUser } from "@/lib/auth";
-import { verifyPassword, hashPassword } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 
 
 
@@ -134,16 +132,6 @@ async function writeJsonFile(filePath: string, data: unknown) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
 }
-
-async function loadJsonFile<T>(filePath: string, fallback: T): Promise<T> {
-  try {
-    const raw = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
 
 export async function requireAuthenticatedUser() {
   const user = await getSessionUser();
@@ -313,7 +301,7 @@ export async function acceptInvitation(
       invitation.role,
       existing,
     );
-    await markInvitationAccepted(invitation.id, user.id);
+    await markInvitationAccepted(invitation.id);
     await appendAuditEntry({
       id: newId(),
       projectId: invitation.projectId,
@@ -336,7 +324,7 @@ export async function acceptInvitation(
     updatedAt: new Date().toISOString(),
   };
   await createMembership(membership);
-  await markInvitationAccepted(invitation.id, user.id);
+  await markInvitationAccepted(invitation.id);
   await appendAuditEntry({
     id: newId(),
     projectId: invitation.projectId,
@@ -406,7 +394,7 @@ export async function createInvitation(
     projectId,
     userId: inviterUser.id,
     action: "invitation_created",
-    details: `Invited ${email} as ${role} (token ${token})`,
+    details: `Invited ${email} as ${role}`,
     createdAt: new Date().toISOString(),
   });
   return token;
@@ -469,7 +457,7 @@ export async function resetPassword(
 ): Promise<boolean> {
   const reset = await consumePasswordResetRecord(token);
   if (!reset) return false;
-  const { listUsers, createUser } = await import("@/lib/store");
+  const { listUsers } = await import("@/lib/store");
   const users = await listUsers();
   const user = users.find((u) => u.id === reset.userId);
   if (!user) return false;
@@ -488,7 +476,7 @@ async function markInvitationExpired(id: string) {
   );
 }
 
-async function markInvitationAccepted(id: string, userId: string) {
+async function markInvitationAccepted(id: string) {
   const invitations = await listInvitations();
   await writeInvitationsRec(
     invitations.map((i: Invitation) =>
@@ -532,13 +520,6 @@ async function replaceUserPasswordHash(userId: string, newHash: string) {
 function writeInvitationsRec(records: Invitation[]) {
   return writeJsonFile(
     path.join(process.cwd(), "data", "invitations.json"),
-    records,
-  );
-}
-
-function writeMembershipsRec(records: ProjectMembership[]) {
-  return writeJsonFile(
-    path.join(process.cwd(), "data", "memberships.json"),
     records,
   );
 }

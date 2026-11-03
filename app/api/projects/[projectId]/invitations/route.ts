@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireProjectPermission } from "@/lib/authorization";
 import {
-  createInvitation as createInvitationRecord,
   listInvitations,
-  findInvitationByToken,
   updateInvitation,
   appendAuditEntry,
   newId,
@@ -46,7 +44,7 @@ export async function POST(
 ) {
   const { projectId } = await params;
   const actingUser = await requireAuthenticatedUser();
-  const membership = await requireProjectPermission(projectId, "manage_members");
+  await requireProjectPermission(projectId, "manage_members");
 
   let body: unknown;
   try {
@@ -96,7 +94,7 @@ export async function DELETE(
 ) {
   const { projectId } = await params;
   const actingUser = await requireAuthenticatedUser();
-  const membership = await requireProjectPermission(projectId, "manage_members");
+  await requireProjectPermission(projectId, "manage_members");
 
   const url = new URL(request.url);
   const token = url.searchParams.get("token");

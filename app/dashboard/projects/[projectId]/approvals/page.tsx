@@ -2,10 +2,7 @@ import { redirect } from "next/navigation";
 import { requireProjectPermission } from "@/lib/authorization";
 import { getProject } from "@/lib/projects/store";
 import { getSessionUser } from "@/lib/auth";
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { RoleNav } from "@/components/dashboard/RoleNav";
-import { formatKES, formatDate } from "@/lib/dashboard-data";
-import { Inbox } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -47,24 +44,8 @@ export default async function ProjectApprovalsPage({
         <RoleNav role={membership.role} projectId={projectId} />
       </div>
 
-      <Card>
-        <CardBody>
-          <div className="flex flex-col items-center py-10 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-              <Inbox className="h-7 w-7 text-primary" aria-hidden="true" />
-            </span>
-            <h2 className="mt-5 text-lg font-bold text-navy">
-              Nothing waiting for your decision
-            </h2>
-            <p className="mt-2 max-w-sm text-sm text-ink/60">
-              When a coordinator requests a change, it appears here with its cost and schedule impact.
-            </p>
-          </div>
-        </CardBody>
-      </Card>
-
-      <p className="rounded-md bg-pale px-4 py-2.5 text-xs text-ink/60">
-        Approval data is not available yet.
+      <p className="border-t border-navy/15 py-5 text-sm text-ink/70">
+        Approval tracking is not available in this workspace yet.
       </p>
     </div>
   );

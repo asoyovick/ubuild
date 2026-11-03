@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import {
   requireProjectPermission,
-  membershipHasPermission,
 } from "@/lib/authorization";
 import {
   createMembership,
@@ -34,7 +33,7 @@ export async function POST(
 ) {
   const { projectId } = await params;
   const actingUser = await requireAuthenticatedUser();
-  const membership = await requireProjectPermission(projectId, "manage_members");
+  await requireProjectPermission(projectId, "manage_members");
 
   let body: unknown;
   try {
@@ -125,7 +124,7 @@ export async function PATCH(
 ) {
   const { projectId } = await params;
   const actingUser = await requireAuthenticatedUser();
-  const membership = await requireProjectPermission(projectId, "manage_members");
+  await requireProjectPermission(projectId, "manage_members");
 
   let body: unknown;
   try {
@@ -199,7 +198,7 @@ export async function DELETE(
 ) {
   const { projectId } = await params;
   const actingUser = await requireAuthenticatedUser();
-  const membership = await requireProjectPermission(projectId, "manage_members");
+  await requireProjectPermission(projectId, "manage_members");
 
   const url = new URL(request.url);
   const targetUserId = url.searchParams.get("userId");

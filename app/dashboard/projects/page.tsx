@@ -1,14 +1,11 @@
-import { redirect } from "next/navigation";
 import { requireAuthenticatedUser } from "@/lib/authorization";
 import {
-  listMembershipsForProject,
+  listMemberships,
   getProject,
-  listProjects,
+  type ProjectMembership,
 } from "@/lib/projects/store";
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-import { ProjectSelector } from "@/components/dashboard/ProjectSelector";
-import { Button } from "@/components/ui/Button";
-import { ArrowRight } from "lucide-react";
+import { Card, CardBody } from "@/components/ui/Card";
+import { ProjectCreateForm } from "@/components/dashboard/ProjectCreateForm";
 import Link from "next/link";
 
 export const metadata = {
@@ -17,7 +14,9 @@ export const metadata = {
 
 export default async function DashboardProjectsPage() {
   const user = await requireAuthenticatedUser();
-  const memberships = await listMembershipsForProjectForUser(user.id);
+  const memberships = (await listMemberships()).filter(
+    (membership) => membership.userId === user.id && membership.status === "ACTIVE",
+  );
   const membershipsWithProject = await enrichMembershipsWithProjects(memberships);
 
   return (
@@ -25,39 +24,27 @@ export default async function DashboardProjectsPage() {
       <div>
         <h1 className="text-2xl font-bold text-navy sm:text-3xl">Projects</h1>
         <p className="mt-1 text-sm text-ink/60">
-          Every project you are building with UBuild.
+          Projects you can access.
         </p>
       </div>
+
+      <ProjectCreateForm />
 
       {membershipsWithProject.length === 0 ? (
         <Card>
           <CardBody>
             <div className="flex flex-col items-center py-10 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <ArrowRight className="h-7 w-7 text-primary" aria-hidden="true" />
-              </span>
-              <h2 className="mt-5 text-lg font-bold text-navy">
-                You haven't joined a project yet
+                <h2 className="mt-5 text-lg font-bold text-navy">
+                  No projects yet
               </h2>
               <p className="mt-2 max-w-sm text-sm text-ink/60">
-                After you create or accept an invitation to a project, it will appear here.
+                Create a project above or accept an invitation to join an existing one.
               </p>
-              <Button href="/contact" variant="navy" className="mt-6">
-                Start a project
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Button>
             </div>
           </CardBody>
         </Card>
       ) : (
         <>
-          <ProjectSelector
-            projects={membershipsWithProject.map((m) => ({
-              id: m.projectId,
-              name: m.project?.name ?? "Untitled project",
-            }))}
-          />
-
           <div className="mt-6 space-y-4">
             {membershipsWithProject.map((membership) => {
               const project = membership.project;
@@ -97,22 +84,6 @@ export default async function DashboardProjectsPage() {
       )}
     </div>
   );
-}
-
-import type { ProjectMembership } from "@/lib/projects/store";
-
-async function listMembershipsForProjectForUser(
-  userId: string,
-): Promise<ProjectMembership[]> {
-  const all = await listMembershipsFromStore();
-  return all.filter(
-    (m) => m.userId === userId && m.status === "ACTIVE",
-  );
-}
-
-async function listMembershipsFromStore(): Promise<ProjectMembership[]> {
-  const { listMemberships } = await import("@/lib/projects/store");
-  return listMemberships();
 }
 
 async function enrichMembershipsWithProjects(

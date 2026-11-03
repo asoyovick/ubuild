@@ -1,14 +1,11 @@
 import { redirect } from "next/navigation";
 import { requireProjectPermission } from "@/lib/authorization";
-import { membershipHasPermission } from "@/lib/authorization";
-import { getProject, listMembershipsForProject, newId } from "@/lib/projects/store";
+import { getProject, listMembershipsForProject } from "@/lib/projects/store";
+import { listUsers } from "@/lib/store";
+import { ProjectInviteForm } from "@/components/dashboard/ProjectInviteForm";
 import { getSessionUser } from "@/lib/auth";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-import { RoleNav } from "@/components/dashboard/RoleNav";
-import { Button } from "@/components/ui/Button";
-import { Plus, Users, UserPlus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { membershipLabel } from "@/lib/authorization";
 
 export const metadata: Metadata = {
@@ -26,9 +23,8 @@ export default async function ProjectTeamPage({
     redirect("/login");
   }
 
-  let membership;
   try {
-    membership = await requireProjectPermission(projectId, "manage_members");
+    await requireProjectPermission(projectId, "manage_members");
   } catch {
     redirect("/dashboard");
   }
@@ -39,6 +35,8 @@ export default async function ProjectTeamPage({
   }
 
   const members = await listMembershipsForProject(projectId);
+  const users = await listUsers();
+  const userById = new Map(users.map((member) => [member.id, member]));
 
   return (
     <div className="space-y-6">
@@ -50,16 +48,9 @@ export default async function ProjectTeamPage({
           </p>
         </div>
 
-        {membershipHasPermission(membership, "manage_members") && (
-          <Link
-            href={`/dashboard/projects/${projectId}/team?action=invite`}
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-bold text-ink transition-colors hover:bg-accent-dark"
-          >
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-            Invite member
-          </Link>
-        )}
       </div>
+
+      <ProjectInviteForm projectId={projectId} />
 
       <Card>
         <CardHeader
@@ -69,7 +60,7 @@ export default async function ProjectTeamPage({
         <CardBody>
           {members.length === 0 ? (
             <p className="text-sm text-ink/70">
-              No team members yet. The project owner can invite others.
+              No active members are assigned to this project.
             </p>
           ) : (
             <ul className="divide-y divide-navy/10">
@@ -80,7 +71,10 @@ export default async function ProjectTeamPage({
                 >
                   <div>
                     <p className="text-sm font-semibold text-ink">
-                      {member.userId}
+                      {userById.get(member.userId)?.name ?? "Account unavailable"}
+                    </p>
+                    <p className="text-xs text-ink/55">
+                      {userById.get(member.userId)?.email ?? ""}
                     </p>
                     <p className="text-xs text-ink/55">
                       Joined{" "}
@@ -101,12 +95,6 @@ export default async function ProjectTeamPage({
         </CardBody>
       </Card>
 
-      <div className="rounded-lg border border-dashed border-navy/20 bg-pale/50 px-5 py-6 text-center">
-        <p className="text-sm text-ink/60">
-          Member names and emails are not yet stored in the data model.
-          This page shows member ids and roles until a user profile field is added.
-        </p>
-      </div>
     </div>
   );
 }

@@ -6,21 +6,15 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FolderKanban,
-  CalendarClock,
-  FileCheck,
   Settings,
   LogOut,
   Menu,
   X,
-  ArrowUpRight,
 } from "lucide-react";
 
 const NAV = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
-  { label: "Milestones", href: "/dashboard/milestones", icon: CalendarClock },
-  { label: "Reports", href: "/dashboard/reports", icon: FileCheck },
-  { label: "Approvals", href: "/dashboard/approvals", icon: FileCheck },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ] as const;
 
@@ -126,14 +120,7 @@ export function DashboardSidebar({
             <p className="truncate text-xs text-white/50">{userEmail}</p>
           </div>
         </div>
-        <div className="mt-4 flex gap-2">
-          <Link
-            href="/contact"
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-accent px-3 py-2 text-xs font-bold text-ink transition-colors hover:bg-accent-dark"
-          >
-            New project
-            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
+        <div className="mt-4">
           <button
             type="button"
             onClick={handleSignOut}

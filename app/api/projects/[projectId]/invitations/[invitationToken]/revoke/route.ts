@@ -7,7 +7,6 @@ import {
   newId,
   type Invitation,
 } from "@/lib/projects/store";
-import { membershipHasPermission } from "@/lib/authorization";
 import { requireAuthenticatedUser } from "@/lib/authorization";
 
 export async function DELETE(
@@ -16,7 +15,7 @@ export async function DELETE(
 ) {
   const { projectId, invitationToken } = await params;
   const actingUser = await requireAuthenticatedUser();
-  const membership = await requireProjectPermission(projectId, "manage_members");
+  await requireProjectPermission(projectId, "manage_members");
 
   const invitations = await listInvitations();
   const invitation = invitations.find(

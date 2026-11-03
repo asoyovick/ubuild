@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bebas_Neue, Inter } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/nav/Navbar";
-import { Footer } from "@/components/nav/Footer";
+import { SiteChrome } from "@/components/nav/SiteChrome";
 
 const display = Bebas_Neue({
   subsets: ["latin"],
@@ -19,11 +18,11 @@ const sans = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "UBuild — Build from anywhere in the world",
+    default: "UBuild — Construction project coordination",
     template: "%s | UBuild",
   },
   description:
-    "UBuild helps property owners and investors plan, coordinate, and monitor construction projects remotely. Plan budgets, track milestones, and review site progress from anywhere.",
+    "Create construction project workspaces, manage project access, and review recorded activity. UBuild supports construction projects in Kenya.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
 };
 
@@ -45,9 +44,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <Navbar />
-        <main id="main-content">{children}</main>
-        <Footer />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

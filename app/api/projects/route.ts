@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/authorization";
-import { createProject, newId } from "@/lib/projects/store";
-import { appendAuditEntry } from "@/lib/projects/store";
-import { PROJECT_ROLES } from "@/lib/projects/store";
+import { createMembership, createProject, newId, appendAuditEntry } from "@/lib/projects/store";
 
 export async function POST(request: Request) {
   const user = await requireAuthenticatedUser();
@@ -13,6 +11,13 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "The request body could not be read." },
+      { status: 400 },
+    );
+  }
+
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json(
+      { error: "Enter the project details and try again." },
       { status: 400 },
     );
   }
@@ -36,25 +41,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ errors }, { status: 422 });
   }
 
+  const now = new Date().toISOString();
   const project = {
     id: newId(),
     ownerId: user.id,
     name: (name as string).trim(),
     location: (location as string).trim(),
     type: (type as string).trim(),
-    description: (description as string)?.trim() ?? "",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    description: typeof description === "string" ? description.trim() : "",
+    createdAt: now,
+    updatedAt: now,
   };
 
   await createProject(project);
+  await createMembership({
+    id: newId(),
+    userId: user.id,
+    projectId: project.id,
+    role: "OWNER",
+    status: "ACTIVE",
+    joinedAt: now,
+    updatedAt: now,
+  });
   await appendAuditEntry({
     id: newId(),
     projectId: project.id,
     userId: user.id,
     action: "project_created",
     details: `Project created by ${user.email} as owner`,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
   });
 
   return NextResponse.json({ project }, { status: 201 });

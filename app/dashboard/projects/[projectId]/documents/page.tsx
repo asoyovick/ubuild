@@ -4,7 +4,6 @@ import { getProject } from "@/lib/projects/store";
 import { getSessionUser } from "@/lib/auth";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { RoleNav } from "@/components/dashboard/RoleNav";
-import { FileText } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -49,23 +48,10 @@ export default async function ProjectDocumentsPage({
       <Card>
         <CardHeader title="Project documents" />
         <CardBody>
-          <div className="flex flex-col items-center py-10 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-              <FileText className="h-7 w-7 text-primary" aria-hidden="true" />
-            </span>
-            <h2 className="mt-5 text-lg font-bold text-navy">
-              No documents uploaded yet
-            </h2>
-            <p className="mt-2 max-w-sm text-sm text-ink/60">
-              Upload plans, drawings, approvals, and other project documents when they are available.
-            </p>
-          </div>
+          <p className="text-sm text-ink/70">Document storage is not available in this workspace yet.</p>
         </CardBody>
       </Card>
 
-      <p className="rounded-md bg-pale px-4 py-2.5 text-xs text-ink/60">
-        Document data appears once authorized members upload files.
-      </p>
     </div>
   );
 }
