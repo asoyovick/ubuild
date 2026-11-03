@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import type { ProjectRole } from "@/lib/projects/types";
 
 /**
  * Local JSON data store.
@@ -12,7 +13,9 @@ import path from "node:path";
  * database-backed repositories.
  */
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = process.env.UBUILD_DATA_DIR
+  ? path.resolve(process.env.UBUILD_DATA_DIR)
+  : path.join(process.cwd(), "data");
 
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const SUBMISSIONS_FILE = path.join(DATA_DIR, "contact-submissions.json");
@@ -44,6 +47,8 @@ export interface StoredUser {
   name: string;
   email: string;
   passwordHash: string;
+  /** Optional for accounts created before profile roles were collected. */
+  profileRole?: ProjectRole;
   createdAt: string;
 }
 
@@ -58,12 +63,27 @@ export async function findUserByEmail(
   return users.find((u) => u.email.toLowerCase() === email.toLowerCase());
 }
 
-export async function createUser(
+let userWriteQueue: Promise<void> = Promise.resolve();
+
+export async function createUserIfEmailAvailable(
   user: StoredUser,
-): Promise<void> {
-  const users = await listUsers();
-  users.push(user);
-  await writeJson(USERS_FILE, users);
+): Promise<boolean> {
+  const operation = userWriteQueue.then(async () => {
+    const users = await listUsers();
+    const email = user.email.trim().toLowerCase();
+    if (users.some((stored) => stored.email.trim().toLowerCase() === email)) {
+      return false;
+    }
+    users.push(user);
+    await writeJson(USERS_FILE, users);
+    return true;
+  });
+  userWriteQueue = operation.then(() => undefined, () => undefined);
+  return operation;
+}
+
+export async function createUser(user: StoredUser): Promise<void> {
+  await createUserIfEmailAvailable(user);
 }
 
 /* ---------- Contact submissions ---------- */

@@ -63,7 +63,10 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json(
-    { message: "You are signed in.", user: { name: user.name, email: user.email } },
+    {
+      message: "You are signed in.",
+      user: { name: user.name, email: user.email, profileRole: user.profileRole ?? null },
+    },
     { status: 200 },
   );
 }

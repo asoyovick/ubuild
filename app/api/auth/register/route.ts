@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
-  createUser,
+  createUserIfEmailAvailable,
   findUserByEmail,
   newId,
 } from "@/lib/store";
 import { hashPassword, createSession, SESSION_COOKIE } from "@/lib/auth";
+import { PROJECT_ROLES, type ProjectRole } from "@/lib/projects/types";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -18,7 +19,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, email, password } = body as Record<string, unknown>;
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json(
+      { error: "Enter your account details and try again." },
+      { status: 400 },
+    );
+  }
+
+  const { name, email, role, password, confirmPassword } = body as Record<string, unknown>;
   const errors: Record<string, string> = {};
 
   if (typeof name !== "string" || name.trim().length < 2) {
@@ -26,12 +34,20 @@ export async function POST(request: Request) {
   }
   if (
     typeof email !== "string" ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   ) {
     errors.email = "Please enter a valid email address.";
   }
   if (typeof password !== "string" || password.length < 8) {
     errors.password = "Choose a password of at least 8 characters.";
+  }
+  if (typeof role !== "string" || !PROJECT_ROLES.includes(role as ProjectRole)) {
+    errors.role = "Choose a role from the list.";
+  }
+  if (typeof confirmPassword !== "string" || confirmPassword.length === 0) {
+    errors.confirmPassword = "Please confirm your password.";
+  } else if (typeof password === "string" && confirmPassword !== password) {
+    errors.confirmPassword = "The passwords do not match.";
   }
   if (Object.keys(errors).length > 0) {
     return NextResponse.json({ errors }, { status: 422 });
@@ -56,9 +72,16 @@ export async function POST(request: Request) {
     name: (name as string).trim(),
     email: normalizedEmail,
     passwordHash,
+    profileRole: role as ProjectRole,
     createdAt: new Date().toISOString(),
   };
-  await createUser(user);
+  const created = await createUserIfEmailAvailable(user);
+  if (!created) {
+    return NextResponse.json(
+      { errors: { email: "An account with this email already exists. Try logging in." } },
+      { status: 409 },
+    );
+  }
 
   const token = `${newId()}${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
   await createSession(token, user.id);
@@ -74,7 +97,7 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       message: "Your account has been created.",
-      user: { name: user.name, email: user.email },
+      user: { name: user.name, email: user.email, profileRole: user.profileRole },
     },
     { status: 201 },
   );

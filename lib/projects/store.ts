@@ -8,7 +8,9 @@ import {
   AuditLogEntry,
 } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = process.env.UBUILD_DATA_DIR
+  ? path.resolve(process.env.UBUILD_DATA_DIR)
+  : path.join(process.cwd(), "data");
 
 const PROJECTS_FILE = path.join(DATA_DIR, "projects.json");
 const MEMBERSHIPS_FILE = path.join(DATA_DIR, "memberships.json");
@@ -185,5 +187,4 @@ export { newId } from "@/lib/store";
 
 export type { Project, ProjectMembership, Invitation, PasswordReset, AuditLogEntry, ProjectRole, MembershipStatus } from "./types";
 
-export { PROJECT_ROLES, ROLE_ALLOWED_TO_INVITE, OWNER_ONLY_ACTIONS } from "./types";
-
+export { PROJECT_ROLES, PROJECT_ROLE_LABELS, ROLE_ALLOWED_TO_INVITE, OWNER_ONLY_ACTIONS } from "./types";

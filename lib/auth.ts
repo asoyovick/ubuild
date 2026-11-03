@@ -7,6 +7,7 @@ import {
   listUsers,
   addSession,
 } from "@/lib/store";
+import type { ProjectRole } from "@/lib/projects/types";
 
 const scryptAsync = promisify(scrypt);
 
@@ -35,6 +36,7 @@ export interface SessionUser {
   id: string;
   name: string;
   email: string;
+  profileRole: ProjectRole | null;
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -46,7 +48,12 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const users = await listUsers();
   const owner = users.find((u) => u.id === session.userId);
   if (!owner) return null;
-  return { id: owner.id, name: owner.name, email: owner.email };
+  return {
+    id: owner.id,
+    name: owner.name,
+    email: owner.email,
+    profileRole: owner.profileRole ?? null,
+  };
 }
 
 export async function createSession(

@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
+import { PROJECT_ROLE_LABELS } from "@/lib/projects/types";
 
 export const metadata = {
   title: "Account",
@@ -41,6 +42,14 @@ export default async function DashboardSettingsPage() {
               </dt>
               <dd className="mt-1 text-sm font-semibold text-ink">
                 {user.email}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-bold tracking-widest text-ink/45 uppercase">
+                Profile role
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-ink">
+                {user.profileRole ? PROJECT_ROLE_LABELS[user.profileRole] : "Not set"}
               </dd>
             </div>
           </dl>

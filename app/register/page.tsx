@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AuthLayout } from "@/components/ui/AuthLayout";
 import { Button } from "@/components/ui/Button";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { PROJECT_ROLES, PROJECT_ROLE_LABELS, type ProjectRole } from "@/lib/projects/types";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState<ProjectRole | "">("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
   const [serverError, setServerError] = useState("");
@@ -29,8 +34,16 @@ export default function RegisterPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       localErrors.email = "Please enter a valid email address.";
     }
+    if (!role || !PROJECT_ROLES.includes(role)) {
+      localErrors.role = "Choose a role from the list.";
+    }
     if (password.length < 8) {
       localErrors.password = "Choose a password of at least 8 characters.";
+    }
+    if (!confirmPassword) {
+      localErrors.confirmPassword = "Please confirm your password.";
+    } else if (confirmPassword !== password) {
+      localErrors.confirmPassword = "The passwords do not match.";
     }
     if (Object.keys(localErrors).length > 0) {
       setErrors(localErrors);
@@ -46,7 +59,9 @@ export default function RegisterPage() {
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
+          role,
           password,
+          confirmPassword,
         }),
       });
     } catch {
@@ -99,8 +114,10 @@ export default function RegisterPage() {
             </label>
             <input
               id="register-name"
+              name="name"
               type="text"
               autoComplete="name"
+              required
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={inputClass("name")}
@@ -117,12 +134,14 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="register-email" className="mb-1.5 block text-sm font-semibold text-ink">
-              Email
+              Email address
             </label>
             <input
               id="register-email"
+              name="email"
               type="email"
               autoComplete="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass("email")}
@@ -138,19 +157,53 @@ export default function RegisterPage() {
           </div>
 
           <div>
+            <label htmlFor="register-role" className="mb-1.5 block text-sm font-semibold text-ink">
+              Role
+            </label>
+            <select
+              id="register-role"
+              name="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value as ProjectRole | "")}
+              className={inputClass("role")}
+              aria-invalid={Boolean(errors.role)}
+              aria-describedby={errors.role ? "register-role-error" : undefined}
+              required
+            >
+              <option value="">Select your role</option>
+              {PROJECT_ROLES.map((option) => (
+                <option key={option} value={option}>{PROJECT_ROLE_LABELS[option]}</option>
+              ))}
+            </select>
+            {errors.role && (
+              <p id="register-role-error" className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600" role="alert">
+                <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                {errors.role}
+              </p>
+            )}
+          </div>
+
+          <div>
             <label htmlFor="register-password" className="mb-1.5 block text-sm font-semibold text-ink">
               Password
             </label>
-            <input
-              id="register-password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass("password")}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? "register-password-error" : "register-password-hint"}
-            />
+            <div className="relative">
+              <input
+                id="register-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`${inputClass("password")} pr-12`}
+                aria-invalid={Boolean(errors.password)}
+                aria-describedby={errors.password ? "register-password-error" : "register-password-hint"}
+                required
+              />
+              <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} className="absolute inset-y-0 right-0 flex items-center px-3 text-ink/55 hover:text-navy">
+                {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            </div>
             <p id="register-password-hint" className="mt-1.5 text-xs text-ink/50">
               At least 8 characters.
             </p>
@@ -158,6 +211,35 @@ export default function RegisterPage() {
               <p id="register-password-error" className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600" role="alert">
                 <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
                 {errors.password}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="register-confirm-password" className="mb-1.5 block text-sm font-semibold text-ink">
+              Confirm password
+            </label>
+            <div className="relative">
+              <input
+                id="register-confirm-password"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`${inputClass("confirmPassword")} pr-12`}
+                aria-invalid={Boolean(errors.confirmPassword)}
+                aria-describedby={errors.confirmPassword ? "register-confirm-password-error" : undefined}
+                required
+              />
+              <button type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"} className="absolute inset-y-0 right-0 flex items-center px-3 text-ink/55 hover:text-navy">
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            </div>
+            {errors.confirmPassword && (
+              <p id="register-confirm-password-error" className="mt-1.5 flex items-center gap-1.5 text-xs text-red-600" role="alert">
+                <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                {errors.confirmPassword}
               </p>
             )}
           </div>

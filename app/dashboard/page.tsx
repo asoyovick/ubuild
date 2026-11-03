@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAuthenticatedUser } from "@/lib/authorization";
 import { getProject, listMemberships } from "@/lib/projects/store";
+import { PROJECT_ROLE_LABELS } from "@/lib/projects/types";
 
 export const metadata = { title: "Overview" };
 
@@ -19,8 +20,12 @@ export default async function DashboardOverviewPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-bold text-navy sm:text-3xl">Overview</h1>
-        <p className="mt-1 text-sm text-ink/60">Projects you can access.</p>
+        <h1 className="text-2xl font-bold text-navy sm:text-3xl">
+          {user.profileRole ? `${PROJECT_ROLE_LABELS[user.profileRole]} workspace` : "Overview"}
+        </h1>
+        <p className="mt-1 text-sm text-ink/60">
+          Welcome, {user.name}. Project access and actions are based on your membership in each project.
+        </p>
       </header>
 
       {projects.length === 0 ? (

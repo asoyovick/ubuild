@@ -15,6 +15,7 @@ import {
   updateMembership as updateMembershipRecord,
   type ProjectMembership,
   type ProjectRole,
+  PROJECT_ROLE_LABELS,
 } from "@/lib/projects/store";
 import type {
   Invitation as InvitationType,
@@ -268,16 +269,7 @@ export function getProjectRolesForUser(
 }
 
 export function membershipLabel(role: ProjectRole): string {
-  return ({
-    OWNER: "Owner",
-    COORDINATOR: "Coordinator",
-    ARCHITECT: "Architect",
-    ENGINEER: "Engineer",
-    QUANTITY_SURVEYOR: "Quantity Surveyor",
-    SITE_SUPERVISOR: "Site Supervisor",
-    CONTRACTOR: "Contractor",
-    SUPPLIER: "Supplier",
-  })[role];
+  return PROJECT_ROLE_LABELS[role];
 }
 
 export async function acceptInvitation(

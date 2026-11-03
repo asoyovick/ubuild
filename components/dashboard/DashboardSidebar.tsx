@@ -11,6 +11,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { PROJECT_ROLE_LABELS, type ProjectRole } from "@/lib/projects/types";
 
 const NAV = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -21,9 +22,11 @@ const NAV = [
 export function DashboardSidebar({
   userName,
   userEmail,
+  profileRole,
 }: {
   userName: string;
   userEmail: string;
+  profileRole: ProjectRole | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -118,6 +121,9 @@ export function DashboardSidebar({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{userName}</p>
             <p className="truncate text-xs text-white/50">{userEmail}</p>
+            <p className="truncate text-xs text-white/50">
+              {profileRole ? PROJECT_ROLE_LABELS[profileRole] : "Profile role not set"}
+            </p>
           </div>
         </div>
         <div className="mt-4">

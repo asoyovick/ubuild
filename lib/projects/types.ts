@@ -8,6 +8,17 @@ export type ProjectRole =
   | "CONTRACTOR"
   | "SUPPLIER";
 
+export const PROJECT_ROLE_LABELS: Record<ProjectRole, string> = {
+  OWNER: "Owner",
+  COORDINATOR: "Coordinator",
+  ARCHITECT: "Architect",
+  ENGINEER: "Engineer",
+  QUANTITY_SURVEYOR: "Quantity Surveyor",
+  SITE_SUPERVISOR: "Site Supervisor",
+  CONTRACTOR: "Contractor",
+  SUPPLIER: "Supplier",
+};
+
 export type MembershipStatus = "ACTIVE" | "PENDING" | "REMOVED";
 
 export interface Project {
