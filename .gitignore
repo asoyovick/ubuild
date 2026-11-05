@@ -1,14 +1,14 @@
 # dependencies
-node_modules/
+**/node_modules/
 .pnp/
 .pnp.js
 
 # next.js
-.next/
+**/.next/
 out/
 
 # production
-build/
+**/build/
 
 # debug
 npm-debug.log*
@@ -24,8 +24,15 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+**/next-env.d.ts
 
-# local data store (development)
+# legacy JSON data and local SQLite database
 data/*.json
 !data/.gitkeep
+backend/data/
+backend/bin/
+backend/api
+backend/import-json
+*.db
+*.db-shm
+*.db-wal

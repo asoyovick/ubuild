@@ -1,81 +1,77 @@
 # UBuild
 
-**Construction project coordination.**
+UBuild is a construction project coordination application with an existing Next.js frontend and a Go REST API backend.
 
-UBuild helps property owners and project teams coordinate construction work, with an initial focus on projects in Kenya.
-
-This repository is the UBuild frontend: a Next.js (App Router) application with TypeScript, Tailwind CSS, and Lucide icons.
-
-## Quick start
-
-```bash
-npm install
-npm run dev        # http://localhost:3000
+```text
+frontend/   Next.js App Router UI
+backend/    Go API, PostgreSQL migrations and tests
+docs/       Architecture and migration notes
 ```
 
-Other commands:
+## Run locally
+
+Start the local PostgreSQL container and API (from `backend/`):
 
 ```bash
-npm run build      # production build
-npm run start      # serve the production build
-npm run lint       # ESLint
+docker start ubuild-postgres-dev 2>/dev/null || docker run -d --name ubuild-postgres-dev --restart unless-stopped -e POSTGRES_DB=ubuild -e POSTGRES_USER=ubuild -e POSTGRES_PASSWORD=ubuild -p 5432:5432 -v ubuild-postgres:/var/lib/postgresql/data postgres:16-alpine
+cp .env.example .env
+set -a; . ./.env; set +a
+go run ./cmd/api
 ```
 
-## Design system
+The migration command requires an empty PostgreSQL database. This working copy's SQLite records have already been copied into the local PostgreSQL database; do not rerun the migration here. On a fresh install with an existing SQLite source, run `go run ./cmd/migrate-sqlite-postgres -source ./data/ubuild.db` once after setting `DATABASE_URL` and before starting the API.
 
-- **Palette:** deep navy `#062A59`, primary blue `#0878D1`, light blue `#A9E6F5`, accent yellow `#FFD323`, pale blue-grey `#EDF6FA`, ink `#09294F`
-- **Display type:** Bebas Neue (condensed, uppercase headings)
-- **Body type:** Inter
-- **Imagery:** local construction photography in `public/images/`
-- Tokens are defined in `app/globals.css` under `@theme`
+In a second terminal (from `frontend/`):
 
-## Pages
+```bash
+cp .env.example .env.local
+npm ci
+npm run dev
+```
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Homepage (services and project process) |
-| `/services` | Service detail pages |
-| `/how-it-works` | Project lifecycle |
-| `/projects` | Construction project types supported |
-| `/about` | Company mission and approach |
-| `/contact` | Project inquiry form (validated, server-side stored) |
-| `/pricing` | Service packages and quote requests |
-| `/login` / `/register` | Authentication |
-| `/dashboard` | Authenticated workspace and project list |
+The frontend runs at `http://localhost:3000`; the API listens at `http://localhost:8080`. The frontend proxies browser API calls to Go and sends server-rendered dashboard requests to the configured `UBUILD_API_URL`.
 
-## How it works (data & integrations)
+## Migrate existing data to PostgreSQL
 
-### Local data store
+The preserved migration source is `backend/data/ubuild.db` (SQLite), originally imported from legacy root `data/*.json`. Its records have already been copied into this checkout's local PostgreSQL container. For another environment, start PostgreSQL, set `DATABASE_URL` in `backend/.env`, then run the one-time SQLite-to-PostgreSQL copy before starting the API:
 
-The current data adapter stores users, sessions, project inquiries, newsletter signups, projects, memberships, invitations, and audit entries in `data/*.json` (git-ignored). This is suitable for local development only; it is not a production database.
+```bash
+go run ./cmd/migrate-sqlite-postgres -source ./data/ubuild.db
+```
 
-- Passwords are hashed with scrypt; sessions use httpOnly cookies.
-- **Do not commit `data/`** — it is excluded by `.gitignore`.
+The migration copies users (including compatible password hashes), sessions, projects, memberships, invitations, audit entries, password resets, contacts, and newsletter signups in one PostgreSQL transaction. The command refuses to migrate into a PostgreSQL database that already contains users. It does not modify or delete the SQLite source. Keep a backup and verify counts before switching production traffic.
 
-### What still needs configuration
+For a fresh environment with legacy JSON but no SQLite database, import JSON directly with `go run ./cmd/import-json -source ../data -database "$DATABASE_URL"` instead. The ignored SQLite file in this checkout remains available as a backup/source; it is not deleted by the transfer.
 
-1. **Email delivery** — contact-form submissions are stored locally but not emailed. Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `EMAIL_TO` in `.env.local` (see `.env.example`) and wire them into `app/api/contact/route.ts`.
-2. **Production database** — replace `lib/store.ts` (the JSON layer) with your database client. All API routes read through this module.
-3. **Project workflows** — project creation, membership, invitations, and activity are stored. Budget, milestone, report, approval, and document records are not implemented yet and are not shown as populated data.
-4. **Newsletter and password recovery email** — signups are stored locally; connect an email service before sending campaigns or password-reset links. Password reset requests currently report that email recovery is unavailable.
+## Checks
 
-### API routes
+```bash
+# backend/
+go test ./...
+go build ./cmd/api
 
-- `POST /api/contact` — validate + store a project inquiry
-- `POST /api/newsletter` — validate + store an email signup
-- `POST /api/auth/register` — create account, sets session cookie
-- `POST /api/auth/login` — verify credentials, sets session cookie
-- `POST /api/auth/logout` — clear session
-- `GET /api/auth/me` — current session user
-- `POST /api/projects` — create a project and assign its creator as owner
+# frontend/
+npm run lint
+npm run build
+```
 
-## Accessibility & quality
+## Make targets and deployment
 
-- Semantic HTML, labelled form fields, `aria-invalid`/`aria-describedby` on errors, keyboard-navigable navigation and mobile menu.
-- Skip-to-content link, focus-visible outlines.
-- Images use descriptive alt text and `object-cover`; hero image is prioritized.
+Run `make help` to list project commands. Common targets are `make db-up`, `make backend`, `make frontend`, and `make test`.
 
-## Deployment notes
+The Render deployment target tests both applications, then requests deployment of the Go API and Next.js frontend. It deliberately does **not** commit or push. Before running it, commit and push the reviewed changes to the configured `develop` branch, then provide Render credentials and service IDs in your shell:
 
-- Set `NEXT_PUBLIC_SITE_URL` to your production domain.
-- The local JSON store is for development only — replace it with a real database before public launch.
+```bash
+export RENDER_API_KEY="..."
+export RENDER_API_SERVICE_ID="srv-..."
+export RENDER_FRONTEND_SERVICE_ID="srv-..."
+make deploy
+```
+
+`make deploy` refuses to proceed with a dirty working tree, the wrong branch, or a commit that is not pushed to `origin/develop`. Keep `RENDER_API_KEY` and `DATABASE_URL` out of frontend environment variables and source control.
+
+## Migration status
+
+Registration, login, logout, profile lookup, project listing/creation, project detail authorization, and owner membership creation are implemented in Go. The existing Next.js visual experience remains intact. Other existing Next.js handlers and JSON-backed project sub-pages remain during migration; see [`docs/migration-status.md`](docs/migration-status.md). Unsupported dashboard capabilities (budgets, milestones, reports, approvals, and document records) remain unimplemented and are not populated with mock data.
+
+PostgreSQL is the Go backend's default and production database (`DATABASE_URL` is backend-only). Go generates cryptographically random session tokens and stores only their SHA-256 digests. Render now provisions a PostgreSQL database. The contact form and newsletter are still served by Next.js while those endpoints await migration.
