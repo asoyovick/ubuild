@@ -78,6 +78,8 @@ type Expense struct {
 	ProjectID   string  `json:"projectId"`
 	Description string  `json:"description"`
 	AmountCents int64   `json:"amountCents"`
+	Amount      int64   `json:"amount"`
+	Reason      string  `json:"reason"`
 	Currency    string  `json:"currency"`
 	Status      string  `json:"status"`
 	RequestedBy string  `json:"requestedBy"`

@@ -66,7 +66,7 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("PATCH /api/projects/{projectId}/milestones/{milestoneId}", a.updateMilestone)
 	mux.HandleFunc("POST /api/projects/{projectId}/budget-items", a.createBudgetItem)
 	mux.HandleFunc("POST /api/projects/{projectId}/expenses", a.createExpense)
-	mux.HandleFunc("PATCH /api/projects/{projectId}/expenses/{expenseId}", a.decideExpense)
+	mux.HandleFunc("PATCH /api/projects/{projectId}/expenses/{expenseId}", a.approveExpense)
 	mux.HandleFunc("POST /api/projects/{projectId}/documents", a.uploadDocument)
 	mux.HandleFunc("GET /api/projects/{projectId}/documents/{documentId}/download", a.downloadDocument)
 	mux.HandleFunc("POST /api/projects/{projectId}/reports", a.createReport)
@@ -368,10 +368,11 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 	_, err = tx.Exec(`INSERT INTO projects(id,owner_id,name,location,type,description,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, id, u.ID, in.Name, in.Location, in.Type, strings.TrimSpace(in.Description), now, now)
 	if err == nil {
-		_, err = tx.Exec(`INSERT INTO memberships(id,user_id,project_id,role,status,joined_at,updated_at) VALUES($1,$2,$3,'OWNER','ACTIVE',$4,$5)`, membershipID, u.ID, id, now, now)
+			_, err = tx.Exec(`INSERT INTO memberships(id,user_id,project_id,role,status,joined_at,updated_at) VALUES($1,$2,$3,'OWNER','ACTIVE',$4,$5)`, membershipID, u.ID, id, now, now)
 	}
 	if err == nil {
-		_, err = tx.Exec(`INSERT INTO audit_entries(id,project_id,user_id,action,details,created_at) VALUES($1,$2,$3,'project_created',$4,$5)`, newID(), id, u.ID, fmt.Sprintf("Project created by %s as owner", u.Email), now)
+		auditID := newID()
+		_, err = tx.Exec(`INSERT INTO audit_entries(id,project_id,user_id,action,details,created_at) VALUES($1,$2,$3,'project_created',$4,$5)`, auditID, id, u.ID, fmt.Sprintf("Project created by %s as owner", u.Email), now)
 	}
 	if err != nil {
 		writeError(w, 500, "Unable to create project.")
@@ -382,6 +383,10 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 201, map[string]any{"project": model.Project{ID: id, OwnerID: u.ID, Name: in.Name, Location: in.Location, Type: in.Type, Description: strings.TrimSpace(in.Description), CreatedAt: now, UpdatedAt: now}})
+}
+
+func (a *API) recordAuditInTx(tx *sql.Tx, projectID, userID, action, details string) {
+	_, _ = tx.Exec(`INSERT INTO audit_entries(id,project_id,user_id,action,details,created_at) VALUES($1,$2,$3,$4,$5,$6)`, newID(), projectID, userID, action, details, now())
 }
 
 func (a *API) project(w http.ResponseWriter, r *http.Request) {

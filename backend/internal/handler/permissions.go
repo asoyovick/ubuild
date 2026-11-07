@@ -3,25 +3,27 @@ package handler
 import "sort"
 
 const (
-	permViewProject     = "view_project"
-	permEditProject     = "edit_project"
-	permManageMembers   = "manage_members"
-	permCreateTasks     = "create_tasks"
-	permEditTasks       = "edit_tasks"
-	permManageSchedule  = "manage_schedule"
-	permViewBudget      = "view_budget"
-	permEditBudget      = "edit_budget"
-	permApproveExpenses = "approve_expenses"
-	permSubmitReports   = "submit_reports"
-	permViewDocuments   = "view_documents"
-	permUploadDocuments = "upload_documents"
-	permSubmitQuotes    = "submit_quotations"
-	permViewApprovals   = "view_approvals"
-	permDecideApprovals = "decide_approvals"
-	permRequestChanges  = "request_changes"
-	permSubmitBOQ       = "submit_boq"
-	permDecideQuotes    = "decide_quotations"
-	permManageIssues    = "manage_issues"
+	permViewProject      = "view_project"
+	permEditProject      = "edit_project"
+	permManageMembers    = "manage_members"
+	permCreateTasks      = "create_tasks"
+	permEditTasks        = "edit_tasks"
+	permManageSchedule   = "manage_schedule"
+	permViewBudget       = "view_budget"
+	permEditBudget       = "edit_budget"
+	permApproveExpenses  = "approve_expenses"
+	permSubmitReports    = "submit_reports"
+	permViewDocuments    = "view_documents"
+	permUploadDocuments  = "upload_documents"
+	permSubmitQuotes     = "submit_quotations"
+	permViewApprovals    = "view_approvals"
+	permDecideApprovals  = "decide_approvals"
+	permRequestChanges   = "request_changes"
+	permSubmitBOQ        = "submit_boq"
+	permDecideQuotes     = "decide_quotations"
+	permManageIssues     = "manage_issues"
+	permViewExpenses     = "view_expenses"
+	permSubmitExpenses   = "submit_expenses"
 )
 
 var rolePermissions = map[string]map[string]bool{
@@ -31,14 +33,14 @@ var rolePermissions = map[string]map[string]bool{
 		permApproveExpenses, permSubmitReports, permViewDocuments,
 		permUploadDocuments, permSubmitQuotes, permViewApprovals,
 		permDecideApprovals, permRequestChanges, permSubmitBOQ,
-		permDecideQuotes, permManageIssues,
+		permDecideQuotes, permManageIssues, permViewExpenses, permSubmitExpenses,
 	),
 	"COORDINATOR": permissionSet(
 		permViewProject, permEditProject, permManageMembers, permCreateTasks,
 		permEditTasks, permManageSchedule, permViewBudget, permSubmitReports,
 		permViewDocuments, permUploadDocuments, permViewApprovals,
 		permDecideApprovals, permRequestChanges, permDecideQuotes,
-		permManageIssues,
+		permManageIssues, permViewExpenses, permSubmitExpenses,
 	),
 	"ARCHITECT": permissionSet(
 		permViewProject, permCreateTasks, permEditTasks, permSubmitReports,
@@ -53,16 +55,17 @@ var rolePermissions = map[string]map[string]bool{
 		permViewProject, permViewBudget, permEditBudget, permViewDocuments,
 		permUploadDocuments, permSubmitQuotes, permViewApprovals,
 		permDecideQuotes, permRequestChanges, permSubmitBOQ, permManageIssues,
+		permViewExpenses, permSubmitExpenses,
 	),
 	"SITE_SUPERVISOR": permissionSet(
 		permViewProject, permCreateTasks, permEditTasks, permSubmitReports,
 		permViewDocuments, permUploadDocuments, permRequestChanges,
-		permManageIssues,
+		permManageIssues, permSubmitExpenses,
 	),
 	"CONTRACTOR": permissionSet(
 		permViewProject, permCreateTasks, permEditTasks, permSubmitReports,
 		permViewDocuments, permUploadDocuments, permRequestChanges,
-		permManageIssues,
+		permManageIssues, permSubmitExpenses,
 	),
 	"SUPPLIER": permissionSet(
 		permViewProject, permViewDocuments, permUploadDocuments, permSubmitQuotes,

@@ -9,6 +9,58 @@ import (
 	"github.com/ubuild/backend/internal/model"
 )
 
+// budgetView aggregates budget items and expenses for the frontend.
+type budgetView struct {
+	Items               []model.BudgetItem `json:"items"`
+	Expenses            []model.Expense    `json:"expenses"`
+	TotalBudgetCents    int64              `json:"totalBudgetCents"`
+	ApprovedExpenseCents int64             `json:"approvedExpenseCents"`
+	PendingExpenseCents int64              `json:"pendingExpenseCents"`
+	CommittedCents      int64              `json:"committedCents"`
+	RemainingCents      int64              `json:"remainingCents"`
+}
+
+func (a *API) buildBudgetView(projectID string, role string) (*budgetView, bool) {
+		if !can(role, permViewBudget) {
+			return nil, false
+		}
+		items := a.listBudget(projectID)
+		expenses := a.listExpenses(projectID)
+
+		if items == nil {
+			items = []model.BudgetItem{}
+		}
+		if expenses == nil {
+			expenses = []model.Expense{}
+		}
+
+		totalBudget := int64(0)
+		for _, item := range items {
+			totalBudget += item.AmountCents
+		}
+
+		approved := int64(0)
+		pending := int64(0)
+		for _, e := range expenses {
+			switch e.Status {
+			case "APPROVED":
+				approved += e.AmountCents
+			case "PENDING":
+				pending += e.AmountCents
+			}
+		}
+
+		return &budgetView{
+			Items:               items,
+			Expenses:            expenses,
+			TotalBudgetCents:    totalBudget,
+			ApprovedExpenseCents: approved,
+			PendingExpenseCents: pending,
+			CommittedCents:      approved + pending,
+			RemainingCents:      totalBudget - (approved + pending),
+		}, true
+	}
+
 type projectAccess struct {
 	User       model.User
 	Project    model.Project
@@ -276,35 +328,49 @@ func (a *API) workspace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if can(role, permEditTasks) || can(role, permCreateTasks) {
-		result["tasks"] = a.listTasks(pid)
+		tasks, err := a.fetchTasksForProject(pid)
+		if err != nil || tasks == nil {
+			tasks = []model.Task{}
+		}
+		result["tasks"] = tasks
 	}
 	if role != "SUPPLIER" {
-		result["milestones"] = a.listMilestones(pid)
+		milestones, err := a.fetchMilestonesForProject(pid)
+		if err != nil || milestones == nil {
+			milestones = []model.Milestone{}
+		}
+		result["milestones"] = milestones
 	}
 	if role != "SUPPLIER" {
-		result["reports"] = a.listReports(pid)
+		reports := a.listReports(pid)
+		result["reports"] = reports
 	}
-	if can(role, permViewBudget) {
-		budget := a.listBudget(pid)
-		result["budget"] = budget
+	if bv, ok := a.buildBudgetView(pid, role); ok {
+		result["budget"] = bv
 	}
 	if can(role, permViewDocuments) {
-		result["documents"] = a.listDocuments(pid)
+		docs := a.listDocuments(pid)
+		result["documents"] = docs
 	}
 	if can(role, permViewApprovals) {
-		result["approvals"] = a.listApprovals(pid)
+		approvals := a.listApprovals(pid)
+		result["approvals"] = approvals
 	}
 	if can(role, permViewApprovals) || can(role, permSubmitBOQ) {
-		result["boq"] = a.listBOQ(pid)
+		boq := a.listBOQ(pid)
+		result["boq"] = boq
 	}
 	if can(role, permManageIssues) {
-		result["issues"] = a.listIssues(pid)
+		issues := a.listIssues(pid)
+		result["issues"] = issues
 	}
 	if can(role, permSubmitQuotes) || can(role, permDecideQuotes) {
-		result["quotations"] = a.listQuotations(pid, access.User.ID, role)
+		quotations := a.listQuotations(pid, access.User.ID, role)
+		result["quotations"] = quotations
 	}
 	if role != "SUPPLIER" {
-		result["activity"] = a.listActivity(pid, 20)
+		activity := a.listActivity(pid, 20)
+		result["activity"] = activity
 	}
 
 	summary := map[string]int{
@@ -342,6 +408,11 @@ func (a *API) workspace(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
+func (a *API) listExpenses(projectID string) []model.Expense {
+	expenses, _ := a.fetchExpensesForProject(projectID)
+	return expenses
+}
+
 func (a *API) listTeam(projectID string) []model.TeamMember {
 	rows, err := a.DB.Query(`SELECT u.id,u.name,u.email,m.role,m.joined_at FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.project_id=$1 AND m.status='ACTIVE' ORDER BY m.joined_at`, projectID)
 	if err != nil {
@@ -357,6 +428,8 @@ func (a *API) listTeam(projectID string) []model.TeamMember {
 	}
 	return items
 }
+
+
 
 type activityEntry struct {
 	ID        string `json:"id"`
