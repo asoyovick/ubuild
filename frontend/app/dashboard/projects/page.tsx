@@ -1,5 +1,6 @@
 import { requireAuthenticatedUser } from "@/lib/authorization";
 import { listBackendProjects } from "@/lib/backend-projects";
+import { PROJECT_ROLE_LABELS } from "@/lib/projects/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProjectCreateForm } from "@/components/dashboard/ProjectCreateForm";
 import Link from "next/link";
@@ -54,7 +55,7 @@ export default async function DashboardProjectsPage() {
                       {project.name}
                     </h2>
                     <span className="rounded-full bg-navy/10 px-2.5 py-0.5 text-xs font-bold text-navy">
-                      {membership.role}
+                      {PROJECT_ROLE_LABELS[membership.role]}
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-ink/60">

@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { acceptInvitation } from "@/lib/authorization";
+import { backendRequest } from "@/lib/backend-api";
 import { Card, CardBody } from "@/components/ui/Card";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
+import type { BackendMembership, BackendProject } from "@/lib/backend-projects";
 
 export const metadata = {
   title: "Accept invitation",
@@ -19,20 +20,26 @@ export default async function AcceptInvitationPage({
     redirect("/login");
   }
 
-  let result = null;
+  let result: { project?: BackendProject; membership?: BackendMembership } | null = null;
   let error = "";
   if (token) {
-    try {
-      result = await acceptInvitation(token);
-    } catch (err) {
-      error = err instanceof Error ? err.message : "Something went wrong.";
+    const response = await backendRequest<{
+      project?: BackendProject;
+      membership?: BackendMembership;
+    }>("invitations/accept", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    if (response.ok) {
+      result = response.data;
+    } else {
+      error = response.error;
     }
   }
 
   if (!token) {
     error = "No invitation token was provided.";
-  } else if (result === null && !error) {
-    error = "This invitation is invalid, expired, or has already been used.";
   }
 
   return (
