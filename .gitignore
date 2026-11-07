@@ -26,6 +26,10 @@ yarn-error.log*
 *.tsbuildinfo
 **/next-env.d.ts
 
+# agent rules
+AGENTS.md
+CLAUDE.md
+
 # legacy JSON data and local SQLite database
 data/*.json
 !data/.gitkeep
