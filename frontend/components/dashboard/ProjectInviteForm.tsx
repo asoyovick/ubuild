@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { workspaceRequest } from "@/lib/workspace-client";
 
 const ROLES = [
   ["COORDINATOR", "Coordinator"],
@@ -28,26 +29,21 @@ export function ProjectInviteForm({ projectId }: { projectId: string }) {
     setInviteUrl("");
     setCopied(false);
 
-    try {
-      const response = await fetch(`/api/projects/${projectId}/invitations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        setError(Object.values(result.errors ?? {})[0] as string ?? result.error ?? "We couldn't create the invitation. Check the details and try again.");
-        return;
-      }
-
-      setInviteEmail(String(values.email));
-      setInviteUrl(`${window.location.origin}/dashboard/projects/accept-invitation?token=${encodeURIComponent(result.token)}`);
-      form.reset();
-    } catch {
-      setError("We couldn't reach the server. Please try again.");
-    } finally {
-      setSaving(false);
+    const result = await workspaceRequest<{ token: string }>(
+      `projects/${projectId}/invitations`,
+      "POST",
+      values,
+    );
+    setSaving(false);
+    if (!result.ok || !result.data) {
+      setError(result.error);
+      return;
     }
+    setInviteEmail(String(values.email));
+    setInviteUrl(
+      `${window.location.origin}/dashboard/projects/accept-invitation?token=${encodeURIComponent(result.data.token)}`,
+    );
+    form.reset();
   }
 
   async function copyInvite() {

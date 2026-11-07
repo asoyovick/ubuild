@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   FolderKanban,
   Settings,
+  HelpCircle,
   LogOut,
   Menu,
   X,
@@ -17,21 +18,27 @@ const NAV = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
+  { label: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
 ] as const;
 
 export function DashboardSidebar({
   userName,
   userEmail,
   profileRole,
+  projects,
 }: {
   userName: string;
   userEmail: string;
   profileRole: ProjectRole | null;
+  projects: Array<{ id: string; name: string; role: ProjectRole }>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const activeProject = projects.find((project) =>
+    pathname.startsWith(`/dashboard/projects/${project.id}`),
+  );
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -111,6 +118,78 @@ export function DashboardSidebar({
             );
           })}
         </ul>
+
+        <div className="mt-6 border-t border-white/10 pt-4">
+          <div className="flex items-center justify-between px-3">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/35">
+              Project workspaces
+            </p>
+            {projects.length > 0 && (
+              <span className="text-[10px] text-white/40">
+                {projects.length} active
+              </span>
+            )}
+          </div>
+          {projects.length === 0 ? (
+            <p className="mt-2 px-3 text-xs leading-relaxed text-white/45">
+              No active projects yet. Create one from Projects.
+            </p>
+          ) : (
+            <>
+              <div className="mt-2.5 px-3">
+                <label htmlFor="sidebar-project-selector" className="sr-only">
+                  Switch project
+                </label>
+                <select
+                  id="sidebar-project-selector"
+                  value={activeProject?.id ?? ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      router.push(`/dashboard/projects/${e.target.value}`);
+                      setOpen(false);
+                    }
+                  }}
+                  className="w-full rounded border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                >
+                  <option value="" disabled className="bg-navy text-white">
+                    Select active project…
+                  </option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id} className="bg-navy text-white">
+                      {project.name} ({PROJECT_ROLE_LABELS[project.role]})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <ul className="mt-2 space-y-1">
+                {projects.map((project) => {
+                  const active = activeProject?.id === project.id;
+                  return (
+                    <li key={project.id}>
+                      <Link
+                        href={`/dashboard/projects/${project.id}`}
+                        onClick={() => setOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={`block rounded-md px-3 py-2 text-xs transition-colors ${
+                          active
+                            ? "bg-white/10 text-white"
+                            : "text-white/60 hover:bg-white/5 hover:text-white"
+                        }`}
+                      >
+                        <span className="block truncate font-semibold">
+                          {project.name}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[11px] text-white/35">
+                          {PROJECT_ROLE_LABELS[project.role]}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </div>
       </nav>
 
       <div className="border-t border-white/10 px-4 py-4">
