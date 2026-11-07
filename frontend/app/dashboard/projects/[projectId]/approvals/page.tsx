@@ -1,13 +1,10 @@
-import { redirect } from "next/navigation";
-import { requireProjectPermission } from "@/lib/authorization";
-import { getProject } from "@/lib/projects/store";
-import { getSessionUser } from "@/lib/auth";
-import { RoleNav } from "@/components/dashboard/RoleNav";
+import { getBackendWorkspace, hasPermission } from "@/lib/backend-projects";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { ApprovalPanel } from "@/components/dashboard/WorkspacePanels";
+import { RetryButton } from "@/components/dashboard/RetryButton";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Approvals",
-};
+export const metadata: Metadata = { title: "Approvals" };
 
 export default async function ProjectApprovalsPage({
   params,
@@ -15,38 +12,47 @@ export default async function ProjectApprovalsPage({
   params: Promise<{ projectId: string }>;
 }) {
   const { projectId } = await params;
-  const user = await getSessionUser();
-  if (!user) {
-    redirect("/login");
+  const result = await getBackendWorkspace(projectId);
+  if (!result.ok || !result.data) {
+    return (
+      <Card>
+        <CardBody>
+          <p className="text-sm text-ink/65">{result.error}</p>
+          <div className="mt-4"><RetryButton /></div>
+        </CardBody>
+      </Card>
+    );
   }
+  const workspace = result.data;
+  const approvals = workspace.approvals ?? [];
 
-  let membership;
-  try {
-    membership = await requireProjectPermission(projectId, "view_approvals");
-  } catch {
-    redirect("/dashboard");
-  }
-
-  const project = await getProject(projectId);
-  if (!project) {
-    redirect("/dashboard");
+  if (!hasPermission(workspace, "view_approvals")) {
+    return (
+      <Card>
+        <CardBody>
+          <p className="text-sm text-ink/65">Approvals are not available for your role in this project.</p>
+        </CardBody>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy sm:text-3xl">Approvals</h1>
-          <p className="mt-1 text-sm text-ink/60">
-            Review requested changes before money or schedule moves.
-          </p>
-        </div>
-        <RoleNav role={membership.role} projectId={projectId} />
+      <div>
+        <h1 className="text-2xl font-bold text-navy sm:text-3xl">Approvals</h1>
+        <p className="mt-1 text-sm text-ink/60">Review requested changes before money or schedule moves.</p>
       </div>
-
-      <p className="border-t border-navy/15 py-5 text-sm text-ink/70">
-        Approval tracking is not available in this workspace yet.
-      </p>
+      <Card>
+        <CardHeader title="Approval requests" subtitle={`${approvals.length} request${approvals.length === 1 ? "" : "s"} recorded`} />
+        <CardBody>
+          <ApprovalPanel
+            projectId={projectId}
+            approvals={approvals}
+            canRequest={hasPermission(workspace, "request_changes")}
+            canDecide={hasPermission(workspace, "decide_approvals")}
+          />
+        </CardBody>
+      </Card>
     </div>
   );
 }
