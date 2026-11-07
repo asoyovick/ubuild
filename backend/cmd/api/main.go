@@ -23,7 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	srv := &http.Server{Addr: cfg.Address, Handler: (&handler.API{DB: db, Origin: cfg.AllowedOrigin, CookieSecure: cfg.CookieSecure}).Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second}
+	srv := &http.Server{Addr: cfg.Address, Handler: (&handler.API{DB: db, Origin: cfg.AllowedOrigin, CookieSecure: cfg.CookieSecure, UploadDir: cfg.UploadDir}).Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 60 * time.Second, IdleTimeout: 60 * time.Second}
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	go func() {

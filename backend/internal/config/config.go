@@ -10,6 +10,7 @@ type Config struct {
 	DatabaseURL   string
 	AllowedOrigin string
 	CookieSecure  bool
+	UploadDir     string
 }
 
 func Load() (Config, error) {
@@ -19,6 +20,7 @@ func Load() (Config, error) {
 		DatabaseURL:   env("DATABASE_URL", "postgres://ubuild:ubuild@localhost:5432/ubuild?sslmode=disable"),
 		AllowedOrigin: env("UBUILD_ALLOWED_ORIGIN", "http://localhost:3000"),
 		CookieSecure:  strings.EqualFold(os.Getenv("UBUILD_COOKIE_SECURE"), "true"),
+		UploadDir:     env("UBUILD_UPLOAD_DIR", "data/uploads"),
 	}
 	return c, nil
 }

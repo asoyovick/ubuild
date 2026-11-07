@@ -30,6 +30,7 @@ type API struct {
 	DB           *sql.DB
 	Origin       string
 	CookieSecure bool
+	UploadDir    string
 	rateMu       sync.Mutex
 	rateEntries  map[string]rateEntry
 }
@@ -52,17 +53,40 @@ func (a *API) Handler() http.Handler {
 	mux.Handle("POST /api/auth/login", a.rateLimit(http.HandlerFunc(a.login)))
 	mux.HandleFunc("POST /api/auth/logout", a.logout)
 	mux.HandleFunc("GET /api/auth/me", a.me)
+	mux.HandleFunc("GET /api/dashboard", a.dashboard)
 	mux.HandleFunc("GET /api/projects", a.projects)
 	mux.HandleFunc("POST /api/projects", a.createProject)
 	mux.HandleFunc("GET /api/projects/{projectId}", a.project)
+	mux.HandleFunc("GET /api/projects/{projectId}/workspace", a.workspace)
 	mux.HandleFunc("GET /api/projects/{projectId}/members", a.members)
 	mux.HandleFunc("GET /api/projects/{projectId}/audit", a.audit)
+	mux.HandleFunc("POST /api/projects/{projectId}/tasks", a.createTask)
+	mux.HandleFunc("PATCH /api/projects/{projectId}/tasks/{taskId}", a.updateTask)
+	mux.HandleFunc("POST /api/projects/{projectId}/milestones", a.createMilestone)
+	mux.HandleFunc("PATCH /api/projects/{projectId}/milestones/{milestoneId}", a.updateMilestone)
+	mux.HandleFunc("POST /api/projects/{projectId}/budget-items", a.createBudgetItem)
+	mux.HandleFunc("POST /api/projects/{projectId}/expenses", a.createExpense)
+	mux.HandleFunc("PATCH /api/projects/{projectId}/expenses/{expenseId}", a.decideExpense)
+	mux.HandleFunc("POST /api/projects/{projectId}/documents", a.uploadDocument)
+	mux.HandleFunc("GET /api/projects/{projectId}/documents/{documentId}/download", a.downloadDocument)
+	mux.HandleFunc("POST /api/projects/{projectId}/reports", a.createReport)
+	mux.HandleFunc("POST /api/projects/{projectId}/approvals", a.createApproval)
+	mux.HandleFunc("PATCH /api/projects/{projectId}/approvals/{approvalId}", a.decideApproval)
+	mux.HandleFunc("POST /api/projects/{projectId}/quotations", a.createQuotation)
+	mux.HandleFunc("PATCH /api/projects/{projectId}/quotations/{quotationId}", a.decideQuotation)
+	mux.HandleFunc("POST /api/projects/{projectId}/boq", a.createBOQItem)
+	mux.HandleFunc("POST /api/projects/{projectId}/issues", a.createIssue)
+	mux.HandleFunc("PATCH /api/projects/{projectId}/issues/{issueId}", a.updateIssue)
+	mux.HandleFunc("GET /api/projects/{projectId}/invitations", a.listInvitations)
+	mux.HandleFunc("POST /api/projects/{projectId}/invitations", a.createInvitation)
+	mux.HandleFunc("DELETE /api/projects/{projectId}/invitations/{token}", a.revokeInvitation)
+	mux.HandleFunc("POST /api/invitations/accept", a.acceptInvitation)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", a.Origin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Vary", "Origin")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
