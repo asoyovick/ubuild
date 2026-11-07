@@ -11,7 +11,11 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    const backend = process.env.UBUILD_API_URL ?? "http://localhost:8080";
+    const backend =
+      process.env.UBUILD_API_URL &&
+      process.env.UBUILD_API_URL !== "http://127.0.0.1:8080"
+        ? process.env.UBUILD_API_URL
+        : "http://localhost:8080";
     return [{ source: "/api/backend/:path*", destination: `${backend}/api/:path*` }];
   },
 };
