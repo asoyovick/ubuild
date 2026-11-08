@@ -29,3 +29,5 @@ services:
         sync: false
       - key: UBUILD_COOKIE_SECURE
         value: "true"
+      - key: UBUILD_UPLOAD_DIR
+        value: /app/backend/data/uploads

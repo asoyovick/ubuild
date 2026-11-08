@@ -4,8 +4,11 @@ set -euo pipefail
 BACKEND_PORT="${BACKEND_PORT:-8080}"
 FRONTEND_PORT="${PORT:-3000}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(dirname "$SCRIPT_DIR")"
+
 echo "Starting UBuild backend API on :${BACKEND_PORT}..."
-cd backend
+cd "$APP_DIR/backend"
 ./bin/api &
 BACKEND_PID=$!
 
@@ -31,5 +34,5 @@ for i in $(seq 1 30); do
 done
 
 echo "Starting Next.js on :${FRONTEND_PORT}..."
-cd ../frontend
+cd "$APP_DIR/frontend"
 exec npm run start
