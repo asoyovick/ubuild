@@ -1,14 +1,12 @@
 services:
   - type: web
-    name: ubuild
-    runtime: node
+    name: ubuild-docker
+    runtime: docker
     plan: free
     branch: main
     rootDir: .
-    buildCommand: |
-      cd backend && go build -o bin/api ./cmd/api
-      cd ../frontend && npm ci && npm run build
-    startCommand: bash scripts/start-services.sh
+    dockerfilePath: Dockerfile
+    dockerContext: .
     healthCheckPath: /
     envVars:
       - key: NODE_VERSION
@@ -25,8 +23,10 @@ services:
         value: http://127.0.0.1:8080
       - key: DATABASE_URL
         sync: false
+        value: postgresql://postgres:UbuildKe!2023@db.etahikzwgcbkckbahavl.supabase.co:5432/postgres
       - key: UBUILD_ALLOWED_ORIGIN
         sync: false
+        value: https://ubuild-a1zk.onrender.com
       - key: UBUILD_COOKIE_SECURE
         value: "true"
       - key: UBUILD_UPLOAD_DIR
