@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    environment:
+      PORT: "3000"
+      BACKEND_PORT: "8080"
+      HOST: "0.0.0.0"
+      UBUILD_API_URL: "http://127.0.0.1:8080"
+      DATABASE_URL: "postgres://ubuild:ubuild@db:5432/ubuild?sslmode=disable"
+      UBUILD_ALLOWED_ORIGIN: "http://localhost:3000"
+      UBUILD_COOKIE_SECURE: "false"
+      UBUILD_UPLOAD_DIR: "/app/backend/data/uploads"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      NEXT_PUBLIC_API_BASE_URL: "/api/backend"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./scripts:/app/scripts
+      - uploads:/app/backend/data/uploads
+    ports:
+      - "3000:3000"
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["bash", "scripts/start-services.sh"]

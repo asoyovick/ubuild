@@ -1,14 +1,13 @@
 # Build stage: compile the Go API and build the Next.js frontend
-FROM node:22-alpine AS build
+FROM golang:1.22-alpine AS backend-build
 WORKDIR /src
-
-# --- Backend ---
 COPY backend/go.mod backend/go.sum ./
-RUN cd backend && go mod download
+RUN go mod download
 COPY backend/ ./backend/
 RUN cd backend && go build -o bin/api ./cmd/api
 
-# --- Frontend ---
+FROM node:22-alpine AS frontend-build
+WORKDIR /src
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
@@ -22,15 +21,19 @@ WORKDIR /app
 
 RUN apk add --no-cache bash curl
 
-# Backend binary
-COPY --from=build /src/backend/bin/api ./backend/bin/api
+# Backend binary + migrations (needed at runtime for schema init)
+COPY --from=backend-build /src/backend/bin/api ./backend/bin/api
+COPY --from=backend-build /src/backend/migrations ./backend/migrations
 
 # Frontend build output (server-rendered Next.js needs .next/server + public)
-COPY --from=build /src/.next ./frontend/.next
-COPY --from=build /src/public ./frontend/public
-COPY --from=build /src/node_modules ./frontend/node_modules
-COPY --from=build /src/package.json ./frontend/package.json
-COPY --from=build /src/next.config.ts ./frontend/next.config.ts
+COPY --from=frontend-build /src/.next ./frontend/.next
+COPY --from=frontend-build /src/public ./frontend/public
+COPY --from=frontend-build /src/node_modules ./frontend/node_modules
+COPY --from=frontend-build /src/package.json ./frontend/package.json
+COPY --from=frontend-build /src/next.config.ts ./frontend/next.config.ts
+
+# Ensure upload dir exists (also created by start-services.sh)
+RUN mkdir -p /app/backend/data/uploads
 
 # Startup script
 COPY scripts/start-services.sh ./scripts/start-services.sh

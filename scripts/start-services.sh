@@ -34,5 +34,7 @@ for i in $(seq 1 30); do
 done
 
 echo "Starting Next.js on :${FRONTEND_PORT}..."
+mkdir -p "$APP_DIR/backend/data/uploads"
+export UBUILD_UPLOAD_DIR="$APP_DIR/backend/data/uploads"
 cd "$APP_DIR/frontend"
 exec npm run start

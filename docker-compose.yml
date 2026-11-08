@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ubuild
+      POSTGRES_USER: ubuild
+      POSTGRES_PASSWORD: ubuild
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ubuild", "-d", "ubuild"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      BACKEND_PORT: "8080"
+      HOST: "0.0.0.0"
+      UBUILD_API_URL: "http://127.0.0.1:8080"
+      DATABASE_URL: "postgres://ubuild:ubuild@db:5432/ubuild?sslmode=disable"
+      UBUILD_ALLOWED_ORIGIN: "http://localhost:3000"
+      UBUILD_COOKIE_SECURE: "false"
+      UBUILD_UPLOAD_DIR: "/app/backend/data/uploads"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      NEXT_PUBLIC_API_BASE_URL: "/api/backend"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/backend/data/uploads
+    command: ["bash", "scripts/start-services.sh"]
+
+volumes:
+  pgdata:
+  uploads:
