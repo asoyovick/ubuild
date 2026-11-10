@@ -31,16 +31,16 @@ func Load() (Config, error) {
 		databaseURL = "postgres://ubuild:ubuild@localhost:5432/ubuild?sslmode=disable"
 	}
 
-	allowedOrigin := strings.TrimRight(env("UBUILD_ALLOWED_ORIGIN", "http://localhost:3000"), "/")
+	allowedOrigin := strings.TrimRight(env("UBUILD_ALLOWED_ORIGIN", os.Getenv("RENDER_EXTERNAL_URL")), "/")
+	if allowedOrigin == "" {
+		allowedOrigin = "http://localhost:3000"
+	}
 	if environment == "production" {
 		if !isPostgresURL(databaseURL) {
 			return Config{}, errors.New("DATABASE_URL must be a postgres:// or postgresql:// URL in production")
 		}
-		if os.Getenv("UBUILD_ALLOWED_ORIGIN") == "" {
-			return Config{}, errors.New("UBUILD_ALLOWED_ORIGIN must be set when UBUILD_ENV=production")
-		}
-		if !strings.HasPrefix(allowedOrigin, "https://") {
-			return Config{}, errors.New("UBUILD_ALLOWED_ORIGIN must use https:// in production")
+		if allowedOrigin == "" || !strings.HasPrefix(allowedOrigin, "https://") {
+			return Config{}, errors.New("UBUILD_ALLOWED_ORIGIN or RENDER_EXTERNAL_URL must be set to https:// in production")
 		}
 	}
 
