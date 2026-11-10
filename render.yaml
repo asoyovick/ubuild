@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ubuild-docker
+    name: ubuild
     runtime: docker
     plan: free
     branch: main
@@ -26,13 +26,13 @@ services:
       - key: UBUILD_ALLOWED_ORIGIN
         sync: false
       - key: UBUILD_SUPABASE_DB_HOST
-        value: db.etahikzwgcbkckbahavl.supabase.co
+        value: aws-0-eu-west-2.pooler.supabase.com
       - key: UBUILD_SUPABASE_DB_PORT
         value: "5432"
       - key: UBUILD_SUPABASE_DB_NAME
         value: postgres
       - key: UBUILD_SUPABASE_DB_USER
-        value: postgres
+        value: postgres.etahikzwgcbkckbahavl
       - key: UBUILD_COOKIE_SECURE
         value: "true"
       - key: UBUILD_POSTGRES_TLS

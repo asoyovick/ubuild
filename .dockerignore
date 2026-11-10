@@ -1,4 +1,7 @@
 node_modules
+**/node_modules
+.next
+**/.next
 next-env.d.ts
 out
 build
@@ -7,8 +10,8 @@ build
 *.db-wal
 data/*.json
 .env
-.env.local
-.env*.local
+.env*
+**/.env*
 .git
 .gitignore
 .vscode
@@ -18,3 +21,4 @@ data/*.json
 frontend/tsconfig.tsbuildinfo
 backend/bin
 backend/api
+backend/data/uploads

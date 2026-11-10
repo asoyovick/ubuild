@@ -7,9 +7,13 @@ FRONTEND_PORT="${PORT:-3000}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(dirname "$SCRIPT_DIR")"
 
+mkdir -p "$APP_DIR/backend/data/uploads"
+[[ -d "$APP_DIR/backend/migrations/postgres" ]] || mkdir -p "$APP_DIR/backend/migrations/postgres"
+
 echo "Starting UBuild backend API on :${BACKEND_PORT}..."
 cd "$APP_DIR/backend"
-./bin/api &
+
+UBUILD_API_ADDR="0.0.0.0:${BACKEND_PORT}" ./bin/api &
 BACKEND_PID=$!
 
 cleanup() {
@@ -34,7 +38,6 @@ for i in $(seq 1 30); do
 done
 
 echo "Starting Next.js on :${FRONTEND_PORT}..."
-mkdir -p "$APP_DIR/backend/data/uploads"
 export UBUILD_UPLOAD_DIR="$APP_DIR/backend/data/uploads"
 cd "$APP_DIR/frontend"
-exec npm run start
+exec npm run start -- -p "${FRONTEND_PORT}" -H "0.0.0.0"

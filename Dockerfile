@@ -4,7 +4,7 @@ WORKDIR /src
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ ./backend/
-RUN cd backend && go build -o bin/api ./cmd/api
+RUN cd backend && CGO_ENABLED=0 go build -o bin/api ./cmd/api
 
 FROM node:22-alpine AS frontend-build
 WORKDIR /src
@@ -25,14 +25,14 @@ RUN apk add --no-cache bash curl
 COPY --from=backend-build /src/backend/bin/api ./backend/bin/api
 COPY --from=backend-build /src/backend/migrations ./backend/migrations
 
-# Frontend build output (server-rendered Next.js needs .next/server + public)
+# Frontend build output
 COPY --from=frontend-build /src/.next ./frontend/.next
 COPY --from=frontend-build /src/public ./frontend/public
 COPY --from=frontend-build /src/node_modules ./frontend/node_modules
 COPY --from=frontend-build /src/package.json ./frontend/package.json
 COPY --from=frontend-build /src/next.config.ts ./frontend/next.config.ts
 
-# Ensure upload dir exists (also created by start-services.sh)
+# Ensure upload dir exists
 RUN mkdir -p /app/backend/data/uploads
 
 # Startup script
