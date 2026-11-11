@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"mime"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -43,18 +44,46 @@ func (a *API) listDocuments(projectID string) []model.Document {
 	return items
 }
 
+// allowedUploadType is a deny-by-default allowlist. Markup and script types are
+// deliberately absent so a client-declared content type cannot turn an upload
+// into a stored cross-site scripting payload.
 func allowedUploadType(contentType string) bool {
-	if strings.HasPrefix(contentType, "image/") {
-		return true
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return false
 	}
-	switch contentType {
-	case "application/pdf", "text/plain", "text/csv",
+	switch mediaType {
+	case "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/tiff", "image/heic", "image/heif",
+		"application/pdf", "text/plain", "text/csv",
 		"application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 		"application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 		"application/zip", "application/octet-stream":
 		return true
 	}
 	return false
+}
+
+// unsafeUploadContent reports whether the actual file bytes look like active
+// web content, regardless of the content type the client declared.
+func unsafeUploadContent(file multipart.File) (bool, error) {
+	sniff := make([]byte, 512)
+	read, err := io.ReadFull(file, sniff)
+	if err != nil && !errors.Is(err, io.ErrUnexpectedEOF) && !errors.Is(err, io.EOF) {
+		return true, err
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return true, err
+	}
+	mediaType, _, parseErr := mime.ParseMediaType(http.DetectContentType(sniff[:read]))
+	if parseErr != nil {
+		return true, nil
+	}
+	switch mediaType {
+	case "text/html", "application/xhtml+xml", "text/xml", "application/xml",
+		"image/svg+xml", "application/javascript", "text/javascript":
+		return true, nil
+	}
+	return false, nil
 }
 
 func safeExtension(name, contentType string) string {
@@ -110,8 +139,17 @@ func (a *API) uploadDocument(w http.ResponseWriter, r *http.Request) {
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
-	if !allowedUploadType(contentType) {
+	mediaType, _, parseErr := mime.ParseMediaType(contentType)
+	if parseErr != nil || !allowedUploadType(contentType) {
 		validationError(w, map[string]string{"file": "Upload an image, PDF, document, spreadsheet, or text file."})
+		return
+	}
+	contentType = mediaType
+	if unsafe, sniffErr := unsafeUploadContent(file); sniffErr != nil {
+		a.serverError(w, "Unable to read the file.")
+		return
+	} else if unsafe {
+		validationError(w, map[string]string{"file": "This file type is not permitted."})
 		return
 	}
 	if title == "" {
@@ -183,7 +221,14 @@ func (a *API) downloadDocument(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 	w.Header().Set("Content-Type", document.ContentType)
-	w.Header().Set("Content-Disposition", `attachment; filename="`+strings.ReplaceAll(document.FileName, `"`, "")+`"`)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
+	w.Header().Set("Cache-Control", "private, no-store")
+	disposition := mime.FormatMediaType("attachment", map[string]string{"filename": document.FileName})
+	if disposition == "" {
+		disposition = "attachment"
+	}
+	w.Header().Set("Content-Disposition", disposition)
 	http.ServeContent(w, r, document.FileName, mustTime(document.CreatedAt), file)
 }
 

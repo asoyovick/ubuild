@@ -3,6 +3,7 @@ package handler
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -37,14 +38,14 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 	if len([]rune(input.Title)) < 2 {
 		errs["title"] = "Please enter a task title."
 	}
+	if !validTaskStatus(input.Status) {
+		errs["status"] = "Choose a valid task status."
+	}
 	if input.AssigneeID != "" {
 		var exists int
 		if err := a.DB.QueryRow(`SELECT 1 FROM memberships WHERE project_id=$1 AND user_id=$2 AND status='ACTIVE'`, access.Project.ID, input.AssigneeID).Scan(&exists); err != nil {
 			errs["assigneeId"] = "Choose an active project member."
 		}
-	}
-	if !can(access.Membership.Role, permEditTasks) {
-		errs["status"] = "You do not have permission to create tasks with this status."
 	}
 	if len(errs) > 0 {
 		writeError(w, http.StatusBadRequest, "validation error")
@@ -69,7 +70,8 @@ func (a *API) createTask(w http.ResponseWriter, r *http.Request) {
 		dueAt.Valid = true
 	}
 	if _, err := a.DB.Exec(`INSERT INTO tasks(id,project_id,title,description,status,assignee_id,created_by,due_at,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$9)`, id, access.Project.ID, input.Title, input.Description, status, assigneeID, access.User.ID, dueAt, createdAt); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to create task: "+err.Error())
+		log.Printf("create task: %v", err)
+		writeError(w, http.StatusInternalServerError, "Unable to create the task.")
 		return
 	}
 	a.recordAudit(access.Project.ID, access.User.ID, "task_created", "Task created: "+input.Title)
@@ -181,11 +183,18 @@ func (a *API) updateTask(w http.ResponseWriter, r *http.Request) {
 	if input.Description != nil {
 		existing.Description = strings.TrimSpace(*input.Description)
 	}
+	errs := map[string]string{}
 	if input.Status != nil {
 		v := strings.TrimSpace(*input.Status)
-		if v != "" {
+		if v != "" && !validTaskStatus(v) {
+			errs["status"] = "Choose a valid task status."
+		} else if v != "" {
 			existing.Status = v
 		}
+	}
+	if len(errs) > 0 {
+		validationError(w, errs)
+		return
 	}
 	if input.AssigneeID != nil {
 		v := strings.TrimSpace(*input.AssigneeID)
@@ -261,8 +270,8 @@ func (a *API) createMilestone(w http.ResponseWriter, r *http.Request) {
 	if input.DueAt == "" {
 		errs["dueAt"] = "Please choose a due date."
 	}
-	if !can(access.Membership.Role, permManageSchedule) && input.Status != "" && input.Status != "PLANNED" {
-		errs["status"] = "You can only create milestones with status PLANNED."
+	if input.Status != "" && !validMilestoneStatus(input.Status) {
+		errs["status"] = "Choose a valid milestone status."
 	}
 	if len(errs) > 0 {
 		writeError(w, http.StatusBadRequest, "validation error")
@@ -374,11 +383,18 @@ func (a *API) updateMilestone(w http.ResponseWriter, r *http.Request) {
 	if input.Description != nil {
 		existing.Description = strings.TrimSpace(*input.Description)
 	}
+	errs := map[string]string{}
 	if input.Status != nil {
 		v := strings.TrimSpace(*input.Status)
-		if v != "" {
+		if v != "" && !validMilestoneStatus(v) {
+			errs["status"] = "Choose a valid milestone status."
+		} else if v != "" {
 			existing.Status = v
 		}
+	}
+	if len(errs) > 0 {
+		validationError(w, errs)
+		return
 	}
 	if input.DueAt != nil {
 		v := strings.TrimSpace(*input.DueAt)
@@ -521,7 +537,8 @@ func (a *API) createExpense(w http.ResponseWriter, r *http.Request) {
 	createdAt := a.now()
 	status := "PENDING"
 	if _, err := a.DB.Exec(`INSERT INTO expenses(id,project_id,description,amount_cents,status,requested_by,created_at) VALUES($1,$2,$3,$4,$5,$6,$7)`, id, access.Project.ID, desc, input.AmountCents, status, access.User.ID, createdAt); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to create expense: "+err.Error())
+		log.Printf("create expense: %v", err)
+		writeError(w, http.StatusInternalServerError, "Unable to submit the expense.")
 		return
 	}
 	a.recordAudit(access.Project.ID, access.User.ID, "expense_submitted", "Expense submitted: "+desc)
@@ -603,7 +620,8 @@ func (a *API) approveExpense(w http.ResponseWriter, r *http.Request) {
 	now := a.now()
 	result, err := a.DB.Exec(`UPDATE expenses SET status=$1,decided_by=$2,decided_at=$3 WHERE id=$4 AND project_id=$5 AND status='PENDING'`, input.Status, access.User.ID, now, expenseID, access.Project.ID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to update expense: "+err.Error())
+		log.Printf("approve expense: %v", err)
+		writeError(w, http.StatusInternalServerError, "Unable to update the expense.")
 		return
 	}
 	affected, _ := result.RowsAffected()
@@ -612,36 +630,6 @@ func (a *API) approveExpense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"updated": true})
-}
-
-func (a *API) getProject(w http.ResponseWriter, r *http.Request) {
-	projectID := r.PathValue("projectId")
-	if projectID == "" {
-		writeError(w, http.StatusBadRequest, "projectId is required")
-		return
-	}
-	project, err := a.fetchProject(projectID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			writeError(w, http.StatusNotFound, "project not found")
-		} else {
-			writeError(w, http.StatusInternalServerError, "failed to load project")
-		}
-		return
-	}
-	writeJSON(w, http.StatusOK, project)
-}
-
-func (a *API) fetchProject(projectID string) (model.Project, error) {
-	var p model.Project
-	err := a.DB.QueryRow(`SELECT id,name,description,owner_id,created_at FROM projects WHERE id=$1`, projectID).Scan(&p.ID, &p.Name, &p.Description, &p.OwnerID, &p.CreatedAt)
-	if errors.Is(err, sql.ErrNoRows) {
-		return model.Project{}, err
-	}
-	if err != nil {
-		return model.Project{}, err
-	}
-	return p, nil
 }
 
 func (a *API) now() string {

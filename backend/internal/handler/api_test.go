@@ -7,7 +7,9 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ubuild/backend/internal/repository"
@@ -374,6 +376,189 @@ func TestDocumentUploadAuthorizationAndStorage(t *testing.T) {
 	}
 	if denied := call(h, "GET", "/api/projects/"+projectID+"/documents/"+uploaded.Document.ID+"/download", nil, outsider); denied.Code != 404 {
 		t.Fatalf("outsider download status=%d", denied.Code)
+	}
+}
+
+func TestSupplierCannotReadProjectAuditLog(t *testing.T) {
+	_, h := testAPI(t)
+	owner, _ := registerTest(h, t, "audit-owner@example.test", "OWNER")
+	projectID := createTestProject(t, h, owner, "Audit project")
+	supplier := inviteAndAccept(t, h, owner, projectID, "audit-supplier@example.test", "SUPPLIER")
+
+	denied := call(h, "GET", "/api/projects/"+projectID+"/audit", nil, supplier)
+	if denied.Code != 403 {
+		t.Fatalf("supplier audit access status=%d body=%s", denied.Code, denied.Body.String())
+	}
+	allowed := call(h, "GET", "/api/projects/"+projectID+"/audit", nil, owner)
+	if allowed.Code != 200 || !bytes.Contains(allowed.Body.Bytes(), []byte("project_created")) {
+		t.Fatalf("owner audit access status=%d body=%s", allowed.Code, allowed.Body.String())
+	}
+}
+
+func TestLoginDoesNotRevealAccountExistence(t *testing.T) {
+	_, h := testAPI(t)
+	_, _ = registerTest(h, t, "known-account@example.test", "ARCHITECT")
+
+	wrongPassword := call(h, "POST", "/api/auth/login", map[string]string{"email": "known-account@example.test", "password": "not-the-password"}, nil)
+	unknownAccount := call(h, "POST", "/api/auth/login", map[string]string{"email": "missing-account@example.test", "password": "not-the-password"}, nil)
+
+	if wrongPassword.Code != 401 || unknownAccount.Code != 401 {
+		t.Fatalf("expected 401 for both attempts, got %d and %d", wrongPassword.Code, unknownAccount.Code)
+	}
+	if wrongPassword.Body.String() != unknownAccount.Body.String() {
+		t.Fatalf("login errors differ and allow account enumeration: %q vs %q", wrongPassword.Body.String(), unknownAccount.Body.String())
+	}
+}
+
+func TestInvalidStatusValuesAreRejected(t *testing.T) {
+	_, h := testAPI(t)
+	owner, _ := registerTest(h, t, "status-owner@example.test", "OWNER")
+	projectID := createTestProject(t, h, owner, "Status project")
+
+	badTask := call(h, "POST", "/api/projects/"+projectID+"/tasks", map[string]string{"title": "Pour slab", "status": "SUPERUSER"}, owner)
+	if badTask.Code != 400 {
+		t.Fatalf("invalid task status on create should be rejected, status=%d body=%s", badTask.Code, badTask.Body.String())
+	}
+	task := call(h, "POST", "/api/projects/"+projectID+"/tasks", map[string]string{"title": "Pour slab", "status": "TODO"}, owner)
+	if task.Code != 201 {
+		t.Fatalf("create task status=%d body=%s", task.Code, task.Body.String())
+	}
+	var taskBody struct {
+		ID string `json:"id"`
+	}
+	_ = json.Unmarshal(task.Body.Bytes(), &taskBody)
+	badPatch := call(h, "PATCH", "/api/projects/"+projectID+"/tasks/"+taskBody.ID, map[string]string{"status": "SUPERUSER"}, owner)
+	if badPatch.Code != 422 {
+		t.Fatalf("invalid task status on update should be rejected, status=%d body=%s", badPatch.Code, badPatch.Body.String())
+	}
+
+	badMilestone := call(h, "POST", "/api/projects/"+projectID+"/milestones", map[string]string{"title": "Groundworks", "dueAt": "2026-12-01", "status": "NOT_A_STATUS"}, owner)
+	if badMilestone.Code != 400 {
+		t.Fatalf("invalid milestone status should be rejected, status=%d body=%s", badMilestone.Code, badMilestone.Body.String())
+	}
+}
+
+func TestTaskMutationRequiresProjectMembership(t *testing.T) {
+	_, h := testAPI(t)
+	ownerA, _ := registerTest(h, t, "task-owner-a@example.test", "OWNER")
+	ownerB, _ := registerTest(h, t, "task-owner-b@example.test", "OWNER")
+	projectA := createTestProject(t, h, ownerA, "Task project A")
+	projectB := createTestProject(t, h, ownerB, "Task project B")
+
+	created := call(h, "POST", "/api/projects/"+projectA+"/tasks", map[string]string{"title": "Private task"}, ownerA)
+	if created.Code != 201 {
+		t.Fatalf("create task status=%d body=%s", created.Code, created.Body.String())
+	}
+	var body struct {
+		ID string `json:"id"`
+	}
+	_ = json.Unmarshal(created.Body.Bytes(), &body)
+
+	crossProject := call(h, "PATCH", "/api/projects/"+projectA+"/tasks/"+body.ID, map[string]string{"title": "Hijacked"}, ownerB)
+	if crossProject.Code != 404 {
+		t.Fatalf("non-member task update status=%d body=%s", crossProject.Code, crossProject.Body.String())
+	}
+	mismatchedProject := call(h, "PATCH", "/api/projects/"+projectB+"/tasks/"+body.ID, map[string]string{"title": "Hijacked"}, ownerB)
+	if mismatchedProject.Code != 404 {
+		t.Fatalf("task from another project must not be updatable: status=%d body=%s", mismatchedProject.Code, mismatchedProject.Body.String())
+	}
+}
+
+func uploadTestFile(t *testing.T, h http.Handler, cookie *http.Cookie, projectID, filename, contentType string, content []byte) *httptest.ResponseRecorder {
+	t.Helper()
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	_ = writer.WriteField("title", "Uploaded file")
+	_ = writer.WriteField("kind", "OTHER")
+	header := textproto.MIMEHeader{}
+	header.Set("Content-Disposition", `form-data; name="file"; filename="`+filename+`"`)
+	header.Set("Content-Type", contentType)
+	part, err := writer.CreatePart(header)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = part.Write(content)
+	_ = writer.Close()
+
+	req := httptest.NewRequest("POST", "/api/projects/"+projectID+"/documents", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.AddCookie(cookie)
+	res := httptest.NewRecorder()
+	h.ServeHTTP(res, req)
+	return res
+}
+
+func TestUploadRejectsActiveWebContent(t *testing.T) {
+	_, h := testAPI(t)
+	owner, _ := registerTest(h, t, "upload-owner@example.test", "OWNER")
+	projectID := createTestProject(t, h, owner, "Upload project")
+
+	svg := uploadTestFile(t, h, owner, projectID, "drawing.svg", "image/svg+xml", []byte(`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>`))
+	if svg.Code != 422 {
+		t.Fatalf("svg upload status=%d body=%s", svg.Code, svg.Body.String())
+	}
+
+	htmlDeclaredAsImage := uploadTestFile(t, h, owner, projectID, "photo.png", "image/png", []byte(`<!DOCTYPE html><html><script>alert(1)</script></html>`))
+	if htmlDeclaredAsImage.Code != 422 {
+		t.Fatalf("html masquerading as an image status=%d body=%s", htmlDeclaredAsImage.Code, htmlDeclaredAsImage.Body.String())
+	}
+
+	png := uploadTestFile(t, h, owner, projectID, "site.png", "image/png", []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"))
+	if png.Code != 201 {
+		t.Fatalf("valid png upload status=%d body=%s", png.Code, png.Body.String())
+	}
+	var uploaded struct {
+		Document struct {
+			ID string `json:"id"`
+		} `json:"document"`
+	}
+	_ = json.Unmarshal(png.Body.Bytes(), &uploaded)
+	download := call(h, "GET", "/api/projects/"+projectID+"/documents/"+uploaded.Document.ID+"/download", nil, owner)
+	if download.Code != 200 {
+		t.Fatalf("download status=%d", download.Code)
+	}
+	if got := download.Header().Get("X-Content-Type-Options"); got != "nosniff" {
+		t.Fatalf("download must set nosniff, got %q", got)
+	}
+	if !strings.HasPrefix(download.Header().Get("Content-Disposition"), "attachment") {
+		t.Fatalf("download must be an attachment, got %q", download.Header().Get("Content-Disposition"))
+	}
+}
+
+func TestLoginRateLimitUsesForwardedClient(t *testing.T) {
+	_, h := testAPI(t)
+	send := func(forwarded string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", "/api/auth/login", strings.NewReader(`{"email":"rate@example.test","password":"wrong-password"}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Forwarded-For", forwarded)
+		res := httptest.NewRecorder()
+		h.ServeHTTP(res, req)
+		return res
+	}
+
+	var last *httptest.ResponseRecorder
+	for attempt := 0; attempt < 21; attempt++ {
+		last = send("203.0.113.9")
+	}
+	if last.Code != 429 {
+		t.Fatalf("expected the client to be throttled, status=%d body=%s", last.Code, last.Body.String())
+	}
+	if res := send("198.51.100.4"); res.Code == 429 {
+		t.Fatal("a different client must not share the first client's rate-limit bucket")
+	}
+}
+
+func TestSecurityHeadersOnAPIResponses(t *testing.T) {
+	_, h := testAPI(t)
+	res := call(h, "GET", "/healthz", nil, nil)
+	for header, want := range map[string]string{
+		"X-Content-Type-Options": "nosniff",
+		"X-Frame-Options":        "DENY",
+		"Referrer-Policy":        "no-referrer",
+	} {
+		if got := res.Header().Get(header); got != want {
+			t.Errorf("%s = %q, want %q", header, got, want)
+		}
 	}
 }
 

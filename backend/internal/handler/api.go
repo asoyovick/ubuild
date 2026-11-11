@@ -87,6 +87,13 @@ func (a *API) Handler() http.Handler {
 		w.Header().Set("Vary", "Origin")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+		if a.CookieSecure {
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -99,13 +106,29 @@ func (a *API) Handler() http.Handler {
 	})
 }
 
+// clientIP resolves the requesting client address. The API runs behind the
+// Next.js/Render proxy, so the last X-Forwarded-For entry is the address the
+// proxy appended; using the whole proxy address would put every visitor in a
+// single rate-limit bucket and lock the site out of authentication.
+func clientIP(r *http.Request) string {
+	if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
+		parts := strings.Split(forwarded, ",")
+		for index := len(parts) - 1; index >= 0; index-- {
+			if candidate := strings.TrimSpace(parts[index]); candidate != "" {
+				return candidate
+			}
+		}
+	}
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return ip
+}
+
 func (a *API) rateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			ip = r.RemoteAddr
-		}
-		key := ip + "|" + r.URL.Path
+		key := clientIP(r) + "|" + r.URL.Path
 		now := time.Now()
 		a.rateMu.Lock()
 		if a.rateEntries == nil {
@@ -157,6 +180,8 @@ func (a *API) register(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(input.Password) < 8 {
 		errs["password"] = "Choose a password of at least 8 characters."
+	} else if len(input.Password) > 128 {
+		errs["password"] = "Choose a password of 128 characters or fewer."
 	}
 	if !roles[input.Role] {
 		errs["role"] = "Choose a role from the list."
@@ -221,7 +246,11 @@ func (a *API) login(w http.ResponseWriter, r *http.Request) {
 	var role sql.NullString
 	err := a.DB.QueryRow("SELECT id,name,email,password_hash,profile_role FROM users WHERE email=$1", input.Email).Scan(&id, &name, &email, &hash, &role)
 	if errors.Is(err, sql.ErrNoRows) {
-		writeJSON(w, 401, map[string]any{"errors": map[string]string{"form": "We couldn't find an account with that email."}})
+		// Spend comparable work so the response time does not reveal whether
+		// the email is registered, and return the same message as a bad
+		// password to prevent account enumeration.
+		_, _ = hashPassword(input.Password)
+		writeJSON(w, 401, map[string]any{"errors": map[string]string{"form": "The email or password is incorrect."}})
 		return
 	}
 	if err != nil {
@@ -230,7 +259,7 @@ func (a *API) login(w http.ResponseWriter, r *http.Request) {
 	}
 	valid, err := verifyPassword(input.Password, hash)
 	if err != nil || !valid {
-		writeJSON(w, 401, map[string]any{"errors": map[string]string{"form": "That password doesn't match our records."}})
+		writeJSON(w, 401, map[string]any{"errors": map[string]string{"form": "The email or password is incorrect."}})
 		return
 	}
 	var profileRole *string
@@ -368,7 +397,7 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 	_, err = tx.Exec(`INSERT INTO projects(id,owner_id,name,location,type,description,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, id, u.ID, in.Name, in.Location, in.Type, strings.TrimSpace(in.Description), now, now)
 	if err == nil {
-			_, err = tx.Exec(`INSERT INTO memberships(id,user_id,project_id,role,status,joined_at,updated_at) VALUES($1,$2,$3,'OWNER','ACTIVE',$4,$5)`, membershipID, u.ID, id, now, now)
+		_, err = tx.Exec(`INSERT INTO memberships(id,user_id,project_id,role,status,joined_at,updated_at) VALUES($1,$2,$3,'OWNER','ACTIVE',$4,$5)`, membershipID, u.ID, id, now, now)
 	}
 	if err == nil {
 		auditID := newID()
@@ -461,12 +490,19 @@ func (a *API) audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	projectID := r.PathValue("projectId")
-	var allowed int
-	if err = a.DB.QueryRow(`SELECT 1 FROM memberships WHERE project_id=$1 AND user_id=$2 AND status='ACTIVE'`, projectID, u.ID).Scan(&allowed); errors.Is(err, sql.ErrNoRows) {
+	var role string
+	if err = a.DB.QueryRow(`SELECT role FROM memberships WHERE project_id=$1 AND user_id=$2 AND status='ACTIVE'`, projectID, u.ID).Scan(&role); errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "Project not found.")
 		return
 	} else if err != nil {
 		writeError(w, http.StatusInternalServerError, "Unable to load project activity.")
+		return
+	}
+	// The workspace and dashboard withhold activity from suppliers because it
+	// exposes invitations, commercial decisions, and team details. The direct
+	// endpoint must enforce the same restriction.
+	if role == "SUPPLIER" {
+		writeError(w, http.StatusForbidden, "You do not have permission to view project activity.")
 		return
 	}
 	rows, err := a.DB.Query(`SELECT id,project_id,user_id,action,details,created_at FROM audit_entries WHERE project_id=$1 ORDER BY created_at DESC`, projectID)

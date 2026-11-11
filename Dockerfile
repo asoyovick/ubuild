@@ -1,5 +1,8 @@
 # Build stage: compile the Go API and build the Next.js frontend
-FROM golang:1.22-alpine AS backend-build
+# Build with a supported Go toolchain. Go 1.22 is end-of-life and no longer
+# receives standard library security fixes; go.mod requires 1.25 for the
+# patched pgx release.
+FROM golang:1.25-alpine AS backend-build
 WORKDIR /src
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
