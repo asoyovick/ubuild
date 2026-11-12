@@ -7,8 +7,11 @@ import {
   FileBarChart,
   FileText,
   FolderKanban,
+  Handshake,
   Landmark,
   ListChecks,
+  Megaphone,
+  MessageSquare,
   Receipt,
   Users,
   Wallet,
@@ -56,6 +59,24 @@ export function RoleNav({
     ...(has("manage_issues")
       ? [{ label: "Issues", href: "/issues", icon: AlertTriangle }]
       : []),
+    ...(role !== "SUPPLIER"
+      ? [
+          { label: "Engagements", href: "/engagements", icon: Handshake },
+          { label: "Opportunities", href: "/opportunities", icon: Megaphone },
+        ]
+      : []),
+    { label: "Messages", href: "/messages", icon: MessageSquare },
+    ...(role !== "OWNER"
+      ? [{ label: "My financials", href: "/financials", icon: Wallet }]
+      : []),
+    ...(role === "OWNER"
+      ? [
+          { label: "Payments", href: "/payments", icon: Receipt },
+          { label: "Funds", href: "/funds", icon: Wallet },
+        ]
+      : role !== "SUPPLIER"
+        ? [{ label: "Payments", href: "/payments", icon: Receipt }]
+        : []),
     ...(has("manage_members")
       ? [{ label: "Team", href: "/team", icon: Users }]
       : []),

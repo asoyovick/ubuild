@@ -5,7 +5,7 @@ UBuild is a construction project coordination application with an existing Next.
 ```text
 frontend/   Next.js App Router UI
 backend/    Go API, PostgreSQL migrations and tests
-docs/       Architecture and migration notes
+docs/       Architecture and migration notes, including the marketplace and project-funds design
 ```
 
 ## Run locally
@@ -72,6 +72,6 @@ make deploy
 
 ## Migration status
 
-Registration, login, logout, profile lookup, project listing/creation, project detail authorization, and owner membership creation are implemented in Go. The existing Next.js visual experience remains intact. Other existing Next.js handlers and JSON-backed project sub-pages remain during migration; see [`docs/migration-status.md`](docs/migration-status.md). Unsupported dashboard capabilities (budgets, milestones, reports, approvals, and document records) remain unimplemented and are not populated with mock data.
+Registration, login, logout, profile lookup, project listing/creation, project detail authorization, and owner membership creation are implemented in Go. The same Go backend now also implements the construction marketplace (opportunities and applications), engagements and variations, project funds and allocations, payment requests and revisions, collaboration messages, and professional financial visibility, all on the shared project/user/engagement/document records covered by migrations `001`–`004`. The existing Next.js visual experience remains intact; see [`docs/migration-status.md`](docs/migration-status.md). Where a capability is not implemented, the UI reports that clearly and does not populate mock data.
 
 PostgreSQL is the Go backend's default and production database (`DATABASE_URL` is backend-only). Go generates cryptographically random session tokens and stores only their SHA-256 digests. Render now provisions a PostgreSQL database. The contact form and newsletter are still served by Next.js while those endpoints await migration.

@@ -8,14 +8,18 @@ type User struct {
 }
 
 type Project struct {
-	ID          string `json:"id"`
-	OwnerID     string `json:"ownerId"`
-	Name        string `json:"name"`
-	Location    string `json:"location"`
-	Type        string `json:"type"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID                string `json:"id"`
+	OwnerID           string `json:"ownerId"`
+	Name              string `json:"name"`
+	Location          string `json:"location"`
+	Type              string `json:"type"`
+	Description       string `json:"description"`
+	Scope             string `json:"scope"`
+	BudgetCents       int64  `json:"budgetCents"`
+	Currency          string `json:"currency"`
+	ConstructionStage string `json:"constructionStage"`
+	CreatedAt         string `json:"createdAt"`
+	UpdatedAt         string `json:"updatedAt"`
 }
 
 type Membership struct {
@@ -51,15 +55,17 @@ type Task struct {
 }
 
 type Milestone struct {
-	ID          string `json:"id"`
-	ProjectID   string `json:"projectId"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-	DueAt       string `json:"dueAt"`
-	CreatedBy   string `json:"createdBy"`
-	CreatedAt   string `json:"createdAt"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID                string `json:"id"`
+	ProjectID         string `json:"projectId"`
+	EngagementID      string `json:"engagementId"`
+	ConstructionStage string `json:"constructionStage"`
+	Title             string `json:"title"`
+	Description       string `json:"description"`
+	Status            string `json:"status"`
+	DueAt             string `json:"dueAt"`
+	CreatedBy         string `json:"createdBy"`
+	CreatedAt         string `json:"createdAt"`
+	UpdatedAt         string `json:"updatedAt"`
 }
 
 type BudgetItem struct {
@@ -90,15 +96,17 @@ type Expense struct {
 }
 
 type Document struct {
-	ID          string `json:"id"`
-	ProjectID   string `json:"projectId"`
-	Title       string `json:"title"`
-	Kind        string `json:"kind"`
-	FileName    string `json:"fileName"`
-	ContentType string `json:"contentType"`
-	SizeBytes   int64  `json:"sizeBytes"`
-	UploadedBy  string `json:"uploadedBy"`
-	CreatedAt   string `json:"createdAt"`
+	ID                string `json:"id"`
+	ProjectID         string `json:"projectId"`
+	EngagementID      string `json:"engagementId"`
+	ConstructionStage string `json:"constructionStage"`
+	Title             string `json:"title"`
+	Kind              string `json:"kind"`
+	FileName          string `json:"fileName"`
+	ContentType       string `json:"contentType"`
+	SizeBytes         int64  `json:"sizeBytes"`
+	UploadedBy        string `json:"uploadedBy"`
+	CreatedAt         string `json:"createdAt"`
 }
 
 type Report struct {

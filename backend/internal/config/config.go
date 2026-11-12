@@ -9,14 +9,15 @@ import (
 )
 
 type Config struct {
-	Environment       string
-	Address           string
-	DatabaseURL       string
-	AllowedOrigin     string
-	CookieSecure      bool
-	UploadDir         string
-	DBMaxOpenConns    int
-	DBMaxIdleConns    int
+	Environment    string
+	Address        string
+	DatabaseURL    string
+	AllowedOrigin  string
+	CookieSecure   bool
+	UploadDir      string
+	ProviderSecret string
+	DBMaxOpenConns int
+	DBMaxIdleConns int
 }
 
 func Load() (Config, error) {
@@ -78,6 +79,7 @@ func Load() (Config, error) {
 		AllowedOrigin:  allowedOrigin,
 		CookieSecure:   cookieSecure,
 		UploadDir:      env("UBUILD_UPLOAD_DIR", "data/uploads"),
+		ProviderSecret: os.Getenv("UBUILD_PROVIDER_SECRET"),
 		DBMaxOpenConns: maxOpen,
 		DBMaxIdleConns: maxIdle,
 	}, nil

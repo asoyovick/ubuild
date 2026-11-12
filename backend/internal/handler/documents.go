@@ -29,7 +29,7 @@ func (a *API) uploadDirectory() string {
 }
 
 func (a *API) listDocuments(projectID string) []model.Document {
-	rows, err := a.DB.Query(`SELECT id,project_id,title,kind,file_name,content_type,size_bytes,uploaded_by,created_at FROM documents WHERE project_id=$1 ORDER BY created_at DESC`, projectID)
+	rows, err := a.DB.Query(`SELECT id,project_id,COALESCE(engagement_id,''),COALESCE(construction_stage,''),title,kind,file_name,content_type,size_bytes,uploaded_by,created_at FROM documents WHERE project_id=$1 ORDER BY created_at DESC`, projectID)
 	if err != nil {
 		return []model.Document{}
 	}
@@ -37,7 +37,7 @@ func (a *API) listDocuments(projectID string) []model.Document {
 	items := []model.Document{}
 	for rows.Next() {
 		var item model.Document
-		if rows.Scan(&item.ID, &item.ProjectID, &item.Title, &item.Kind, &item.FileName, &item.ContentType, &item.SizeBytes, &item.UploadedBy, &item.CreatedAt) == nil {
+		if rows.Scan(&item.ID, &item.ProjectID, &item.EngagementID, &item.ConstructionStage, &item.Title, &item.Kind, &item.FileName, &item.ContentType, &item.SizeBytes, &item.UploadedBy, &item.CreatedAt) == nil {
 			items = append(items, item)
 		}
 	}
@@ -183,13 +183,17 @@ func (a *API) uploadDocument(w http.ResponseWriter, r *http.Request) {
 	if fileName == "." || fileName == string(filepath.Separator) {
 		fileName = "upload"
 	}
-	if _, err := a.DB.Exec(`INSERT INTO documents(id,project_id,title,kind,file_name,content_type,size_bytes,storage_name,uploaded_by,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, id, access.Project.ID, title, kind, fileName, contentType, written, storageName, access.User.ID, createdAt); err != nil {
+	engagementID := strings.TrimSpace(r.FormValue("engagementId"))
+	constructionStage := strings.ToUpper(strings.TrimSpace(r.FormValue("constructionStage")))
+	if _, err := a.DB.Exec(`INSERT INTO documents(id,project_id,engagement_id,construction_stage,title,kind,file_name,content_type,size_bytes,storage_name,uploaded_by,created_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+		id, access.Project.ID, engagementID, constructionStage, title, kind, fileName, contentType, written, storageName, access.User.ID, createdAt); err != nil {
 		_ = os.Remove(filepath.Join(directory, storageName))
 		a.serverError(w, "Unable to save the document record.")
 		return
 	}
 	a.recordAudit(access.Project.ID, access.User.ID, "document_uploaded", title)
-	a.created(w, map[string]any{"document": model.Document{ID: id, ProjectID: access.Project.ID, Title: title, Kind: kind, FileName: fileName, ContentType: contentType, SizeBytes: written, UploadedBy: access.User.ID, CreatedAt: createdAt}})
+	a.created(w, map[string]any{"document": model.Document{ID: id, ProjectID: access.Project.ID, EngagementID: engagementID, ConstructionStage: constructionStage, Title: title, Kind: kind, FileName: fileName, ContentType: contentType, SizeBytes: written, UploadedBy: access.User.ID, CreatedAt: createdAt}})
 }
 
 func (a *API) downloadDocument(w http.ResponseWriter, r *http.Request) {

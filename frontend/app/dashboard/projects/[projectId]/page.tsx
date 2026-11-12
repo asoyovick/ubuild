@@ -5,6 +5,8 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { RetryButton } from "@/components/dashboard/RetryButton";
 import { formatMoney } from "@/lib/workspace-client";
 import { PROJECT_ROLE_LABELS } from "@/lib/projects/types";
+import { stageLabel } from "@/lib/ubuild-shared";
+import { ProjectBriefForm } from "@/components/dashboard/ProjectBriefForm";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -203,9 +205,25 @@ export default async function ProjectOverviewPage({
             <dl className="grid gap-4 sm:grid-cols-2">
               <Detail label="Location" value={project.location} />
               <Detail label="Project type" value={project.type} />
+              <Detail label="Construction stage" value={stageLabel(project.constructionStage)} />
+              <Detail
+                label="Project budget"
+                value={formatMoney(project.budgetCents ?? 0, project.currency || "KES")}
+              />
               <Detail label="Created" value={new Date(project.createdAt).toLocaleDateString("en-GB")} />
               <Detail label="Your role" value={PROJECT_ROLE_LABELS[membership.role]} />
             </dl>
+            {project.scope && (
+              <div className="mt-4 border-t border-navy/10 pt-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-ink/45">Scope of work</p>
+                <p className="mt-1 text-sm text-ink/70">{project.scope}</p>
+              </div>
+            )}
+            {membership.role === "OWNER" && (
+              <div className="mt-4 border-t border-navy/10 pt-3">
+                <ProjectBriefForm project={project} />
+              </div>
+            )}
           </CardBody>
         </Card>
 

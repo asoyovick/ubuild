@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FolderKanban,
+  Handshake,
+  Megaphone,
   Settings,
   HelpCircle,
   LogOut,
@@ -17,6 +19,8 @@ import { PROJECT_ROLE_LABELS, type ProjectRole } from "@/lib/projects/types";
 const NAV = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
+  { label: "Professionals", href: "/dashboard/professionals", icon: Handshake },
+  { label: "Opportunities", href: "/dashboard/opportunities", icon: Megaphone },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
   { label: "Help & Support", href: "/dashboard/help", icon: HelpCircle },
 ] as const;

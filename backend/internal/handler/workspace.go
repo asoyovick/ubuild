@@ -11,55 +11,55 @@ import (
 
 // budgetView aggregates budget items and expenses for the frontend.
 type budgetView struct {
-	Items               []model.BudgetItem `json:"items"`
-	Expenses            []model.Expense    `json:"expenses"`
-	TotalBudgetCents    int64              `json:"totalBudgetCents"`
-	ApprovedExpenseCents int64             `json:"approvedExpenseCents"`
-	PendingExpenseCents int64              `json:"pendingExpenseCents"`
-	CommittedCents      int64              `json:"committedCents"`
-	RemainingCents      int64              `json:"remainingCents"`
+	Items                []model.BudgetItem `json:"items"`
+	Expenses             []model.Expense    `json:"expenses"`
+	TotalBudgetCents     int64              `json:"totalBudgetCents"`
+	ApprovedExpenseCents int64              `json:"approvedExpenseCents"`
+	PendingExpenseCents  int64              `json:"pendingExpenseCents"`
+	CommittedCents       int64              `json:"committedCents"`
+	RemainingCents       int64              `json:"remainingCents"`
 }
 
 func (a *API) buildBudgetView(projectID string, role string) (*budgetView, bool) {
-		if !can(role, permViewBudget) {
-			return nil, false
-		}
-		items := a.listBudget(projectID)
-		expenses := a.listExpenses(projectID)
-
-		if items == nil {
-			items = []model.BudgetItem{}
-		}
-		if expenses == nil {
-			expenses = []model.Expense{}
-		}
-
-		totalBudget := int64(0)
-		for _, item := range items {
-			totalBudget += item.AmountCents
-		}
-
-		approved := int64(0)
-		pending := int64(0)
-		for _, e := range expenses {
-			switch e.Status {
-			case "APPROVED":
-				approved += e.AmountCents
-			case "PENDING":
-				pending += e.AmountCents
-			}
-		}
-
-		return &budgetView{
-			Items:               items,
-			Expenses:            expenses,
-			TotalBudgetCents:    totalBudget,
-			ApprovedExpenseCents: approved,
-			PendingExpenseCents: pending,
-			CommittedCents:      approved + pending,
-			RemainingCents:      totalBudget - (approved + pending),
-		}, true
+	if !can(role, permViewBudget) {
+		return nil, false
 	}
+	items := a.listBudget(projectID)
+	expenses := a.listExpenses(projectID)
+
+	if items == nil {
+		items = []model.BudgetItem{}
+	}
+	if expenses == nil {
+		expenses = []model.Expense{}
+	}
+
+	totalBudget := int64(0)
+	for _, item := range items {
+		totalBudget += item.AmountCents
+	}
+
+	approved := int64(0)
+	pending := int64(0)
+	for _, e := range expenses {
+		switch e.Status {
+		case "APPROVED":
+			approved += e.AmountCents
+		case "PENDING":
+			pending += e.AmountCents
+		}
+	}
+
+	return &budgetView{
+		Items:                items,
+		Expenses:             expenses,
+		TotalBudgetCents:     totalBudget,
+		ApprovedExpenseCents: approved,
+		PendingExpenseCents:  pending,
+		CommittedCents:       approved + pending,
+		RemainingCents:       totalBudget - (approved + pending),
+	}, true
+}
 
 type projectAccess struct {
 	User       model.User
@@ -79,8 +79,8 @@ func (a *API) requireProjectAccess(w http.ResponseWriter, r *http.Request, permi
 	projectID := r.PathValue("projectId")
 	var access projectAccess
 	access.User = u
-	err = a.DB.QueryRow(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE p.id=$1 AND m.user_id=$2 AND m.status='ACTIVE'`, projectID, u.ID).Scan(
-		&access.Project.ID, &access.Project.OwnerID, &access.Project.Name, &access.Project.Location, &access.Project.Type, &access.Project.Description, &access.Project.CreatedAt, &access.Project.UpdatedAt,
+	err = a.DB.QueryRow(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.scope,p.budget_cents,p.currency,p.construction_stage,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE p.id=$1 AND m.user_id=$2 AND m.status='ACTIVE'`, projectID, u.ID).Scan(
+		&access.Project.ID, &access.Project.OwnerID, &access.Project.Name, &access.Project.Location, &access.Project.Type, &access.Project.Description, &access.Project.Scope, &access.Project.BudgetCents, &access.Project.Currency, &access.Project.ConstructionStage, &access.Project.CreatedAt, &access.Project.UpdatedAt,
 		&access.Membership.ID, &access.Membership.UserID, &access.Membership.ProjectID, &access.Membership.Role, &access.Membership.Status, &access.Membership.JoinedAt, &access.Membership.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -118,7 +118,7 @@ func (a *API) dashboard(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "Authentication required.")
 		return
 	}
-	rows, err := a.DB.Query(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE m.user_id=$1 AND m.status='ACTIVE' ORDER BY p.updated_at DESC`, u.ID)
+	rows, err := a.DB.Query(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.scope,p.budget_cents,p.currency,p.construction_stage,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE m.user_id=$1 AND m.status='ACTIVE' ORDER BY p.updated_at DESC`, u.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Unable to load your dashboard.")
 		return
@@ -143,7 +143,7 @@ func (a *API) dashboard(w http.ResponseWriter, r *http.Request) {
 	items := []dashboardProject{}
 	for rows.Next() {
 		var item dashboardProject
-		if err = rows.Scan(&item.Project.ID, &item.Project.OwnerID, &item.Project.Name, &item.Project.Location, &item.Project.Type, &item.Project.Description, &item.Project.CreatedAt, &item.Project.UpdatedAt, &item.Membership.ID, &item.Membership.UserID, &item.Membership.ProjectID, &item.Membership.Role, &item.Membership.Status, &item.Membership.JoinedAt, &item.Membership.UpdatedAt); err != nil {
+		if err = rows.Scan(&item.Project.ID, &item.Project.OwnerID, &item.Project.Name, &item.Project.Location, &item.Project.Type, &item.Project.Description, &item.Project.Scope, &item.Project.BudgetCents, &item.Project.Currency, &item.Project.ConstructionStage, &item.Project.CreatedAt, &item.Project.UpdatedAt, &item.Membership.ID, &item.Membership.UserID, &item.Membership.ProjectID, &item.Membership.Role, &item.Membership.Status, &item.Membership.JoinedAt, &item.Membership.UpdatedAt); err != nil {
 			rows.Close()
 			writeError(w, http.StatusInternalServerError, "Unable to load your dashboard.")
 			return
@@ -428,8 +428,6 @@ func (a *API) listTeam(projectID string) []model.TeamMember {
 	}
 	return items
 }
-
-
 
 type activityEntry struct {
 	ID        string `json:"id"`

@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { PROJECT_STAGES, stageLabel } from "@/lib/ubuild-shared";
 
 export function ProjectCreateForm() {
   const router = useRouter();
@@ -13,13 +14,22 @@ export function ProjectCreateForm() {
     setError("");
     setSaving(true);
     const form = event.currentTarget;
-    const values = Object.fromEntries(new FormData(form).entries());
+    const values = new FormData(form);
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/backend"}/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          name: String(values.get("name") ?? ""),
+          location: String(values.get("location") ?? ""),
+          type: String(values.get("type") ?? ""),
+          description: String(values.get("description") ?? ""),
+          scope: String(values.get("scope") ?? ""),
+          budgetCents: Math.round(Number(values.get("budget") ?? 0) * 100),
+          currency: String(values.get("currency") ?? "KES"),
+          constructionStage: String(values.get("constructionStage") ?? "DESIGN"),
+        }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -60,6 +70,33 @@ export function ProjectCreateForm() {
             <option>Commercial</option>
             <option>Other</option>
           </select>
+        </label>
+        <label className="text-sm font-medium text-ink">
+          Current construction stage
+          <select name="constructionStage" defaultValue="DESIGN" className="mt-1 block w-full rounded border border-navy/20 bg-white px-3 py-2 font-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light">
+            {PROJECT_STAGES.map((stage) => (
+              <option key={stage} value={stage}>{stageLabel(stage)}</option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-medium text-ink">
+          Budget
+          <input name="budget" type="number" min={0} step="0.01" placeholder="0" className="mt-1 block w-full rounded border border-navy/20 bg-white px-3 py-2 font-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light" />
+        </label>
+        <label className="text-sm font-medium text-ink">
+          Currency
+          <select name="currency" defaultValue="KES" className="mt-1 block w-full rounded border border-navy/20 bg-white px-3 py-2 font-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light">
+            <option value="KES">KES — Kenyan shilling</option>
+            <option value="USD">USD — US dollar</option>
+            <option value="EUR">EUR — Euro</option>
+            <option value="GBP">GBP — Pound sterling</option>
+            <option value="UGX">UGX — Ugandan shilling</option>
+            <option value="TZS">TZS — Tanzanian shilling</option>
+          </select>
+        </label>
+        <label className="text-sm font-medium text-ink sm:col-span-2">
+          Scope of work
+          <textarea name="scope" rows={2} placeholder="What the project includes and what you need help with" className="mt-1 block w-full rounded border border-navy/20 bg-white px-3 py-2 font-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-light" />
         </label>
         <label className="text-sm font-medium text-ink sm:col-span-2">
           Description <span className="font-normal text-ink/50">(optional)</span>

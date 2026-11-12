@@ -43,10 +43,11 @@ func run() error {
 	srv := &http.Server{
 		Addr: cfg.Address,
 		Handler: (&handler.API{
-			DB:           db,
-			Origin:       cfg.AllowedOrigin,
-			CookieSecure: cfg.CookieSecure,
-			UploadDir:    cfg.UploadDir,
+			DB:             db,
+			Origin:         cfg.AllowedOrigin,
+			CookieSecure:   cfg.CookieSecure,
+			UploadDir:      cfg.UploadDir,
+			ProviderSecret: cfg.ProviderSecret,
 		}).Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,

@@ -31,8 +31,11 @@ type API struct {
 	Origin       string
 	CookieSecure bool
 	UploadDir    string
-	rateMu       sync.Mutex
-	rateEntries  map[string]rateEntry
+	// ProviderSecret authenticates the provider transaction intake. It is unset
+	// until a payment provider is selected and an adapter is deployed.
+	ProviderSecret string
+	rateMu         sync.Mutex
+	rateEntries    map[string]rateEntry
 }
 
 type rateEntry struct {
@@ -57,6 +60,7 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("GET /api/projects", a.projects)
 	mux.HandleFunc("POST /api/projects", a.createProject)
 	mux.HandleFunc("GET /api/projects/{projectId}", a.project)
+	mux.HandleFunc("PATCH /api/projects/{projectId}", a.updateProject)
 	mux.HandleFunc("GET /api/projects/{projectId}/workspace", a.workspace)
 	mux.HandleFunc("GET /api/projects/{projectId}/members", a.members)
 	mux.HandleFunc("GET /api/projects/{projectId}/audit", a.audit)
@@ -81,12 +85,60 @@ func (a *API) Handler() http.Handler {
 	mux.HandleFunc("POST /api/projects/{projectId}/invitations", a.createInvitation)
 	mux.HandleFunc("DELETE /api/projects/{projectId}/invitations/{token}", a.revokeInvitation)
 	mux.HandleFunc("POST /api/invitations/accept", a.acceptInvitation)
+
+	// Marketplace, engagement and project-funds routes.
+	mux.HandleFunc("GET /api/professionals", a.listProfessionals)
+	mux.HandleFunc("GET /api/professionals/recommendations", a.recommendProfessionals)
+	mux.HandleFunc("GET /api/professionals/{professionalId}", a.getProfessional)
+	mux.HandleFunc("PUT /api/professionals/me", a.saveProfessionalProfile)
+	mux.HandleFunc("GET /api/projects/{projectId}/engagements", a.listEngagements)
+	mux.HandleFunc("POST /api/projects/{projectId}/engagements", a.createEngagement)
+	mux.HandleFunc("POST /api/projects/{projectId}/engagements/{engagementId}/approve", a.approveEngagement)
+	mux.HandleFunc("POST /api/projects/{projectId}/engagements/{engagementId}/complete", a.completeEngagement)
+	mux.HandleFunc("GET /api/projects/{projectId}/engagements/{engagementId}/variations", a.listVariations)
+	mux.HandleFunc("POST /api/projects/{projectId}/engagements/{engagementId}/variations", a.createVariation)
+	mux.HandleFunc("POST /api/projects/{projectId}/variations/{variationId}/decide", a.decideVariation)
+	mux.HandleFunc("POST /api/projects/{projectId}/engagements/{engagementId}/ratings", a.rateProfessional)
+	mux.HandleFunc("GET /api/projects/{projectId}/funds", a.projectFunds)
+	mux.HandleFunc("POST /api/projects/{projectId}/funds", a.openFundsAccount)
+	mux.HandleFunc("POST /api/projects/{projectId}/deposits", a.depositFunds)
+	mux.HandleFunc("POST /api/projects/{projectId}/funds/allocate", a.allocateFunds)
+	mux.HandleFunc("GET /api/projects/{projectId}/ledger", a.projectLedger)
+	mux.HandleFunc("GET /api/projects/{projectId}/payment-requests", a.listPaymentRequests)
+	mux.HandleFunc("POST /api/projects/{projectId}/payment-requests", a.createPaymentRequest)
+	mux.HandleFunc("POST /api/projects/{projectId}/payment-requests/{requestId}/authorize", a.authorizePayment)
+	mux.HandleFunc("POST /api/projects/{projectId}/payment-requests/{requestId}/reject", a.rejectPayment)
+	mux.HandleFunc("GET /api/projects/{projectId}/payment-requests/{requestId}/instructions", a.paymentInstructions)
+	mux.HandleFunc("GET /api/projects/{projectId}/provider", a.getProvider)
+	mux.HandleFunc("PUT /api/projects/{projectId}/provider", a.configureProvider)
+	mux.HandleFunc("POST /api/provider/transactions", a.providerTransaction)
+
+	// Integration: opportunities, applications, allocations, messages and the
+	// professional's own financial view.
+	mux.HandleFunc("GET /api/opportunities", a.listOpenOpportunities)
+	mux.HandleFunc("GET /api/opportunities/{opportunityId}", a.getOpportunity)
+	mux.HandleFunc("POST /api/opportunities/{opportunityId}/applications", a.applyToOpportunity)
+	mux.HandleFunc("GET /api/professionals/me/applications", a.listMyApplications)
+	mux.HandleFunc("GET /api/projects/{projectId}/opportunities", a.listProjectOpportunities)
+	mux.HandleFunc("POST /api/projects/{projectId}/opportunities", a.createOpportunity)
+	mux.HandleFunc("POST /api/projects/{projectId}/opportunities/{opportunityId}/close", a.closeOpportunity)
+	mux.HandleFunc("POST /api/projects/{projectId}/applications/{applicationId}/decide", a.decideApplication)
+	mux.HandleFunc("POST /api/projects/{projectId}/applications/{applicationId}/select", a.selectApplication)
+	mux.HandleFunc("POST /api/projects/{projectId}/applications/{applicationId}/withdraw", a.withdrawApplication)
+	mux.HandleFunc("GET /api/projects/{projectId}/recommendations", a.recommendForProject)
+	mux.HandleFunc("GET /api/projects/{projectId}/allocations", a.listAllocations)
+	mux.HandleFunc("POST /api/projects/{projectId}/allocations/{allocationId}/cancel", a.cancelAllocation)
+	mux.HandleFunc("GET /api/projects/{projectId}/financials/me", a.professionalFinancials)
+	mux.HandleFunc("GET /api/projects/{projectId}/messages", a.listMessages)
+	mux.HandleFunc("POST /api/projects/{projectId}/messages", a.postMessage)
+	mux.HandleFunc("POST /api/projects/{projectId}/payment-requests/{requestId}/revisions", a.requestRevisions)
+	mux.HandleFunc("POST /api/projects/{projectId}/payment-requests/{requestId}/resubmit", a.resubmitPayment)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", a.Origin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Vary", "Origin")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "no-referrer")
@@ -335,7 +387,7 @@ func (a *API) projects(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 401, "Authentication required.")
 		return
 	}
-	rows, err := a.DB.Query(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE m.user_id=$1 AND m.status='ACTIVE' ORDER BY p.created_at DESC`, u.ID)
+	rows, err := a.DB.Query(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.scope,p.budget_cents,p.currency,p.construction_stage,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE m.user_id=$1 AND m.status='ACTIVE' ORDER BY p.created_at DESC`, u.ID)
 	if err != nil {
 		writeError(w, 500, "Unable to load projects.")
 		return
@@ -345,7 +397,7 @@ func (a *API) projects(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var p model.Project
 		var m model.Membership
-		if err = rows.Scan(&p.ID, &p.OwnerID, &p.Name, &p.Location, &p.Type, &p.Description, &p.CreatedAt, &p.UpdatedAt, &m.ID, &m.UserID, &m.ProjectID, &m.Role, &m.Status, &m.JoinedAt, &m.UpdatedAt); err != nil {
+		if err = rows.Scan(&p.ID, &p.OwnerID, &p.Name, &p.Location, &p.Type, &p.Description, &p.Scope, &p.BudgetCents, &p.Currency, &p.ConstructionStage, &p.CreatedAt, &p.UpdatedAt, &m.ID, &m.UserID, &m.ProjectID, &m.Role, &m.Status, &m.JoinedAt, &m.UpdatedAt); err != nil {
 			writeError(w, 500, "Unable to load projects.")
 			return
 		}
@@ -361,10 +413,14 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in struct {
-		Name        string `json:"name"`
-		Location    string `json:"location"`
-		Type        string `json:"type"`
-		Description string `json:"description"`
+		Name              string `json:"name"`
+		Location          string `json:"location"`
+		Type              string `json:"type"`
+		Description       string `json:"description"`
+		Scope             string `json:"scope"`
+		BudgetCents       int64  `json:"budgetCents"`
+		Currency          string `json:"currency"`
+		ConstructionStage string `json:"constructionStage"`
 	}
 	if !decode(w, r, &in) {
 		return
@@ -372,6 +428,15 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 	in.Name = strings.TrimSpace(in.Name)
 	in.Location = strings.TrimSpace(in.Location)
 	in.Type = strings.TrimSpace(in.Type)
+	in.Scope = strings.TrimSpace(in.Scope)
+	in.Currency = strings.ToUpper(strings.TrimSpace(in.Currency))
+	in.ConstructionStage = strings.ToUpper(strings.TrimSpace(in.ConstructionStage))
+	if in.Currency == "" {
+		in.Currency = "KES"
+	}
+	if in.ConstructionStage == "" {
+		in.ConstructionStage = string(model.ProjectStageDesign)
+	}
 	errs := map[string]string{}
 	if len([]rune(in.Name)) < 2 {
 		errs["name"] = "Please enter a project name."
@@ -381,6 +446,12 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 	}
 	if len([]rune(in.Type)) < 2 {
 		errs["type"] = "Please enter a project type."
+	}
+	if in.BudgetCents < 0 {
+		errs["budgetCents"] = "The budget cannot be negative."
+	}
+	if !model.ValidProjectStage(model.ProjectStage(in.ConstructionStage)) {
+		errs["constructionStage"] = "Choose a valid construction stage."
 	}
 	if len(errs) > 0 {
 		writeJSON(w, 422, map[string]any{"errors": errs})
@@ -395,7 +466,9 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	_, err = tx.Exec(`INSERT INTO projects(id,owner_id,name,location,type,description,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, id, u.ID, in.Name, in.Location, in.Type, strings.TrimSpace(in.Description), now, now)
+	_, err = tx.Exec(`INSERT INTO projects(id,owner_id,name,location,type,description,scope,budget_cents,currency,construction_stage,created_at,updated_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+		id, u.ID, in.Name, in.Location, in.Type, strings.TrimSpace(in.Description), in.Scope, in.BudgetCents, in.Currency, in.ConstructionStage, now, now)
 	if err == nil {
 		_, err = tx.Exec(`INSERT INTO memberships(id,user_id,project_id,role,status,joined_at,updated_at) VALUES($1,$2,$3,'OWNER','ACTIVE',$4,$5)`, membershipID, u.ID, id, now, now)
 	}
@@ -411,7 +484,7 @@ func (a *API) createProject(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 500, "Unable to create project.")
 		return
 	}
-	writeJSON(w, 201, map[string]any{"project": model.Project{ID: id, OwnerID: u.ID, Name: in.Name, Location: in.Location, Type: in.Type, Description: strings.TrimSpace(in.Description), CreatedAt: now, UpdatedAt: now}})
+	writeJSON(w, 201, map[string]any{"project": model.Project{ID: id, OwnerID: u.ID, Name: in.Name, Location: in.Location, Type: in.Type, Description: strings.TrimSpace(in.Description), Scope: in.Scope, BudgetCents: in.BudgetCents, Currency: in.Currency, ConstructionStage: in.ConstructionStage, CreatedAt: now, UpdatedAt: now}})
 }
 
 func (a *API) recordAuditInTx(tx *sql.Tx, projectID, userID, action, details string) {
@@ -427,7 +500,7 @@ func (a *API) project(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("projectId")
 	var p model.Project
 	var m model.Membership
-	err = a.DB.QueryRow(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE p.id=$1 AND m.user_id=$2 AND m.status='ACTIVE'`, id, u.ID).Scan(&p.ID, &p.OwnerID, &p.Name, &p.Location, &p.Type, &p.Description, &p.CreatedAt, &p.UpdatedAt, &m.ID, &m.UserID, &m.ProjectID, &m.Role, &m.Status, &m.JoinedAt, &m.UpdatedAt)
+	err = a.DB.QueryRow(`SELECT p.id,p.owner_id,p.name,p.location,p.type,p.description,p.scope,p.budget_cents,p.currency,p.construction_stage,p.created_at,p.updated_at,m.id,m.user_id,m.project_id,m.role,m.status,m.joined_at,m.updated_at FROM projects p JOIN memberships m ON m.project_id=p.id WHERE p.id=$1 AND m.user_id=$2 AND m.status='ACTIVE'`, id, u.ID).Scan(&p.ID, &p.OwnerID, &p.Name, &p.Location, &p.Type, &p.Description, &p.Scope, &p.BudgetCents, &p.Currency, &p.ConstructionStage, &p.CreatedAt, &p.UpdatedAt, &m.ID, &m.UserID, &m.ProjectID, &m.Role, &m.Status, &m.JoinedAt, &m.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, 404, "Project not found.")
 		return

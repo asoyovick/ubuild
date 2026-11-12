@@ -252,10 +252,12 @@ func (a *API) createMilestone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Status      string `json:"status"`
-		DueAt       string `json:"dueAt"`
+		Title             string `json:"title"`
+		Description       string `json:"description"`
+		Status            string `json:"status"`
+		DueAt             string `json:"dueAt"`
+		EngagementID      string `json:"engagementId"`
+		ConstructionStage string `json:"constructionStage"`
 	}
 	if !decode(w, r, &input) {
 		return
@@ -263,6 +265,8 @@ func (a *API) createMilestone(w http.ResponseWriter, r *http.Request) {
 	input.Title = strings.TrimSpace(input.Title)
 	input.Description = strings.TrimSpace(input.Description)
 	input.DueAt = strings.TrimSpace(input.DueAt)
+	input.EngagementID = strings.TrimSpace(input.EngagementID)
+	input.ConstructionStage = strings.ToUpper(strings.TrimSpace(input.ConstructionStage))
 	errs := map[string]string{}
 	if len([]rune(input.Title)) < 2 {
 		errs["title"] = "Please enter a milestone title."
@@ -283,20 +287,24 @@ func (a *API) createMilestone(w http.ResponseWriter, r *http.Request) {
 	if input.Status != "" {
 		status = input.Status
 	}
-	if _, err := a.DB.Exec(`INSERT INTO milestones(id,project_id,title,description,status,due_at,created_by,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$8)`, id, access.Project.ID, input.Title, input.Description, status, input.DueAt, access.User.ID, createdAt); err != nil {
+	if _, err := a.DB.Exec(`INSERT INTO milestones(id,project_id,engagement_id,construction_stage,title,description,status,due_at,created_by,created_at,updated_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)`,
+		id, access.Project.ID, input.EngagementID, input.ConstructionStage, input.Title, input.Description, status, input.DueAt, access.User.ID, createdAt); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to create milestone")
 		return
 	}
 	milestone := model.Milestone{
-		ID:          id,
-		ProjectID:   access.Project.ID,
-		Title:       input.Title,
-		Description: input.Description,
-		Status:      status,
-		DueAt:       input.DueAt,
-		CreatedBy:   access.User.ID,
-		CreatedAt:   createdAt,
-		UpdatedAt:   createdAt,
+		ID:                id,
+		ProjectID:         access.Project.ID,
+		EngagementID:      input.EngagementID,
+		ConstructionStage: input.ConstructionStage,
+		Title:             input.Title,
+		Description:       input.Description,
+		Status:            status,
+		DueAt:             input.DueAt,
+		CreatedBy:         access.User.ID,
+		CreatedAt:         createdAt,
+		UpdatedAt:         createdAt,
 	}
 	writeJSON(w, http.StatusCreated, milestone)
 }
@@ -330,7 +338,7 @@ func (a *API) listMilestones(pid string) []model.Milestone {
 }
 
 func (a *API) fetchMilestonesForProject(projectID string) ([]model.Milestone, error) {
-	rows, err := a.DB.Query(`SELECT id,project_id,title,description,status,due_at,created_by,created_at,updated_at FROM milestones WHERE project_id=$1 ORDER BY due_at ASC`, projectID)
+	rows, err := a.DB.Query(`SELECT id,project_id,COALESCE(engagement_id,''),COALESCE(construction_stage,''),title,description,status,due_at,created_by,created_at,updated_at FROM milestones WHERE project_id=$1 ORDER BY due_at ASC`, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +346,7 @@ func (a *API) fetchMilestonesForProject(projectID string) ([]model.Milestone, er
 	var items []model.Milestone
 	for rows.Next() {
 		var m model.Milestone
-		if err := rows.Scan(&m.ID, &m.ProjectID, &m.Title, &m.Description, &m.Status, &m.DueAt, &m.CreatedBy, &m.CreatedAt, &m.UpdatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.ProjectID, &m.EngagementID, &m.ConstructionStage, &m.Title, &m.Description, &m.Status, &m.DueAt, &m.CreatedBy, &m.CreatedAt, &m.UpdatedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, m)

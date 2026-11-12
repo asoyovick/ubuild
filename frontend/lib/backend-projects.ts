@@ -8,6 +8,10 @@ export interface BackendProject {
   location: string;
   type: string;
   description: string;
+  scope: string;
+  budgetCents: number;
+  currency: string;
+  constructionStage: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -82,6 +86,8 @@ export interface Task {
 export interface Milestone {
   id: string;
   projectId: string;
+  engagementId: string;
+  constructionStage: string;
   title: string;
   description: string;
   status: "PLANNED" | "IN_PROGRESS" | "COMPLETED";
@@ -129,6 +135,8 @@ export interface BudgetView {
 export interface ProjectDocument {
   id: string;
   projectId: string;
+  engagementId: string;
+  constructionStage: string;
   title: string;
   kind: string;
   fileName: string;

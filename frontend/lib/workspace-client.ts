@@ -20,7 +20,7 @@ function firstError(body: unknown, fallback: string): string {
 
 export async function workspaceRequest<T>(
   path: string,
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   body?: unknown,
 ): Promise<ClientResult<T>> {
   try {
